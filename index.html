@@ -284,7 +284,30 @@
       <canvas id="canvas"></canvas>
       <div style="text-align: center; margin-top: 15px;">
         <button class="btn" onclick="captureImage()">📸 Capturar</button>
+        <button class="btn btn-secondary" onclick="focusCamera()">🔍 Focar</button>
         <button class="btn btn-danger" onclick="stopCamera()">❌ Fechar</button>
+      </div>
+      
+      <!-- Controles de Foco -->
+      <div id="focus-controls" class="focus-controls hidden" style="margin-top: 15px;">
+        <div style="text-align: center; margin-bottom: 10px;">
+          <label for="focus-slider" style="display: block; margin-bottom: 5px; font-weight: 600;">
+            🔍 Ajuste de Foco Manual
+          </label>
+          <input type="range" id="focus-slider" min="0" max="1" step="0.1" value="0.1" 
+                 style="width: 80%; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+            <button class="btn btn-secondary" onclick="setFocusMode('continuous')" style="font-size: 12px; padding: 8px 12px;">
+              🔄 Auto
+            </button>
+            <button class="btn btn-secondary" onclick="setFocusMode('manual')" style="font-size: 12px; padding: 8px 12px;">
+              ✋ Manual
+            </button>
+            <button class="btn btn-secondary" onclick="triggerAutoFocus()" style="font-size: 12px; padding: 8px 12px;">
+              ⚡ Focar
+            </button>
+          </div>
+        </div>
       </div>
       
       <div class="loading" id="ocr-loading">
@@ -312,6 +335,8 @@
     // Global variables
     let stream = null;
     let isValidating = false;
+    let currentTrack = null;
+    let focusCapabilities = null;
     
     // Document validation functions
     function validateCPF(cpf) {
@@ -504,21 +529,84 @@
         const cameraSection = document.getElementById('camera-section');
         const video = document.getElementById('video');
         
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { 
+        // Configurações avançadas de câmera com foco automático
+        const constraints = {
+          video: {
             facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        });
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            // Configurações de foco
+            focusMode: 'continuous',
+            focusDistance: { ideal: 0.1 }, // Foco para objetos próximos
+            // Configurações de exposição
+            exposureMode: 'continuous',
+            whiteBalanceMode: 'continuous',
+            // Configurações de zoom
+            zoom: { ideal: 1.0, min: 1.0, max: 3.0 }
+          }
+        };
+        
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
         
         video.srcObject = stream;
+        
+        // Aguardar o vídeo carregar
+        await new Promise((resolve) => {
+          video.onloadedmetadata = resolve;
+        });
+        
+        // Aplicar configurações avançadas de foco se suportadas
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        
+        if (capabilities.focusMode) {
+          await track.applyConstraints({
+            advanced: [{
+              focusMode: 'continuous',
+              focusDistance: 0.1
+            }]
+          });
+        }
+        
+        // Configurar foco automático contínuo
+        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+          await track.applyConstraints({
+            focusMode: 'continuous'
+          });
+        }
+        
         cameraSection.classList.remove('hidden');
         
-        showToast('Câmera ativada', 'success');
+        showToast('Câmera ativada com foco automático', 'success');
+        
+        // Adicionar controles de foco manual
+        addFocusControls(track, capabilities);
+        
+        // Armazenar referências globais
+        currentTrack = track;
+        focusCapabilities = capabilities;
+        
       } catch (error) {
         console.error('Erro ao acessar câmera:', error);
-        showToast('Erro ao acessar câmera', 'error');
+        
+        // Fallback para configurações básicas
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              facingMode: 'environment',
+              width: { ideal: 1280 },
+              height: { ideal: 720 }
+            } 
+          });
+          
+          const video = document.getElementById('video');
+          video.srcObject = stream;
+          document.getElementById('camera-section').classList.remove('hidden');
+          
+          showToast('Câmera ativada (modo básico)', 'success');
+        } catch (fallbackError) {
+          showToast('Erro ao acessar câmera', 'error');
+        }
       }
     }
     
@@ -526,10 +614,145 @@
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
+        currentTrack = null;
+        focusCapabilities = null;
       }
       
       document.getElementById('camera-section').classList.add('hidden');
+      document.getElementById('focus-controls').classList.add('hidden');
       showToast('Câmera desativada', 'success');
+    }
+    
+    // Funções de controle de foco
+    function addFocusControls(track, capabilities) {
+      const focusControls = document.getElementById('focus-controls');
+      
+      if (capabilities.focusMode || capabilities.focusDistance) {
+        focusControls.classList.remove('hidden');
+        
+        // Configurar slider de foco
+        const focusSlider = document.getElementById('focus-slider');
+        if (capabilities.focusDistance) {
+          focusSlider.min = capabilities.focusDistance.min || 0;
+          focusSlider.max = capabilities.focusDistance.max || 1;
+          focusSlider.step = 0.05;
+          
+          focusSlider.addEventListener('input', (e) => {
+            setManualFocus(parseFloat(e.target.value));
+          });
+        }
+      }
+    }
+    
+    async function focusCamera() {
+      if (!currentTrack) {
+        showToast('Câmera não está ativa', 'error');
+        return;
+      }
+      
+      try {
+        // Tentar foco automático
+        await triggerAutoFocus();
+        showToast('Foco aplicado', 'success');
+      } catch (error) {
+        console.error('Erro ao focar:', error);
+        showToast('Erro ao aplicar foco', 'error');
+      }
+    }
+    
+    async function setFocusMode(mode) {
+      if (!currentTrack || !focusCapabilities) {
+        showToast('Controles de foco não disponíveis', 'error');
+        return;
+      }
+      
+      try {
+        if (focusCapabilities.focusMode && focusCapabilities.focusMode.includes(mode)) {
+          await currentTrack.applyConstraints({
+            focusMode: mode
+          });
+          
+          showToast(`Modo de foco: ${mode === 'continuous' ? 'Automático' : 'Manual'}`, 'success');
+          
+          // Mostrar/ocultar slider baseado no modo
+          const focusSlider = document.getElementById('focus-slider');
+          if (mode === 'manual') {
+            focusSlider.style.opacity = '1';
+            focusSlider.disabled = false;
+          } else {
+            focusSlider.style.opacity = '0.5';
+            focusSlider.disabled = true;
+          }
+        } else {
+          showToast('Modo de foco não suportado', 'error');
+        }
+      } catch (error) {
+        console.error('Erro ao definir modo de foco:', error);
+        showToast('Erro ao alterar modo de foco', 'error');
+      }
+    }
+    
+    async function setManualFocus(distance) {
+      if (!currentTrack || !focusCapabilities) return;
+      
+      try {
+        if (focusCapabilities.focusDistance) {
+          await currentTrack.applyConstraints({
+            focusMode: 'manual',
+            focusDistance: distance
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao definir foco manual:', error);
+      }
+    }
+    
+    async function triggerAutoFocus() {
+      if (!currentTrack) return;
+      
+      try {
+        // Método 1: Usar single-shot focus se disponível
+        if (focusCapabilities && focusCapabilities.focusMode && 
+            focusCapabilities.focusMode.includes('single-shot')) {
+          await currentTrack.applyConstraints({
+            focusMode: 'single-shot'
+          });
+          
+          // Aguardar um momento para o foco
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Voltar para continuous
+          await currentTrack.applyConstraints({
+            focusMode: 'continuous'
+          });
+        } else {
+          // Método 2: Simular foco mudando temporariamente a distância
+          const originalDistance = 0.1;
+          
+          await currentTrack.applyConstraints({
+            focusMode: 'manual',
+            focusDistance: 0.5
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          await currentTrack.applyConstraints({
+            focusMode: 'continuous',
+            focusDistance: originalDistance
+          });
+        }
+      } catch (error) {
+        console.error('Erro no auto-foco:', error);
+        
+        // Fallback: apenas garantir que está em modo continuous
+        try {
+          await currentTrack.applyConstraints({
+            focusMode: 'continuous'
+          });
+        } catch (fallbackError) {
+          console.error('Erro no fallback de foco:', fallbackError);
+        }
+      }
     }
     
     async function captureImage() {
