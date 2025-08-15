@@ -45,13 +45,16 @@
     
     /* Melhorias para câmera */
     .camera-container{position:relative}
-    .focus-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:80px;border:2px solid var(--accent);border-radius:8px;pointer-events:none;opacity:0.7;display:none}
+    .focus-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:80px;border:2px solid var(--accent);border-radius:8px;pointer-events:none;opacity:0.7;display:none;transition:all 0.3s ease}
     .focus-indicator.active{display:block}
+    .focus-indicator.focusing{border-color:#22c55e;box-shadow:0 0 20px rgba(34,197,94,0.5);animation:pulse 1s infinite}
+    @keyframes pulse{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}100%{transform:translate(-50%,-50%) scale(1)}}
     
     /* Melhorias para feedback */
-    .status-message{background:var(--card);border-radius:8px;padding:8px 12px;margin-top:8px;border-left:3px solid var(--accent)}
+    .status-message{background:var(--card);border-radius:8px;padding:8px 12px;margin-top:8px;border-left:3px solid var(--accent);animation:slideIn 0.3s ease}
     .status-message.error{border-left-color:var(--bad)}
     .status-message.success{border-left-color:var(--ok)}
+    @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
   </style>
   <!-- libs via CDN -->
   <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
@@ -79,6 +82,10 @@
           <button id="btnStart" class="primary">📷 Ligar câmera</button>
           <button id="btnShot" class="ghost" disabled>🖼️ Capturar & Ler CPF</button>
           <button id="btnStop" class="ghost" disabled>⏹️ Desligar câmera</button>
+        </div>
+        <div class="row">
+          <button id="btnFocus" class="ghost" disabled>🎯 Focar Documento</button>
+          <button id="btnAutoFocus" class="ghost" disabled>🔄 Auto Foco</button>
         </div>
         <div class="hint">Dica: aponte para um documento ou texto que contenha o CPF. Boa luz ajuda o OCR.</div>
         <div class="camera-container">
@@ -174,28 +181,245 @@
   const btnStart = document.getElementById('btnStart');
   const btnShot  = document.getElementById('btnShot');
   const btnStop  = document.getElementById('btnStop');
+  const btnFocus = document.getElementById('btnFocus');
+  const btnAutoFocus = document.getElementById('btnAutoFocus');
   const statusEl = document.getElementById('status');
   const pbar     = document.getElementById('pbar');
   const focusIndicator = document.getElementById('focusIndicator');
   const statusMessage = document.getElementById('statusMessage');
 
   let stream;
+  let cameraCapabilities = {};
+  
+  // Função para detectar capacidades da câmera
+  async function detectCameraCapabilities(stream) {
+    if (stream && stream.getVideoTracks().length > 0) {
+      const track = stream.getVideoTracks()[0];
+      try {
+        const capabilities = track.getCapabilities();
+        cameraCapabilities = {
+          focusMode: capabilities.focusMode || [],
+          exposureMode: capabilities.exposureMode || [],
+          whiteBalanceMode: capabilities.whiteBalanceMode || [],
+          zoom: capabilities.zoom || { min: 1, max: 1 }
+        };
+        console.log('Capacidades da câmera:', cameraCapabilities);
+        return capabilities;
+      } catch (e) {
+        console.log('Não foi possível detectar capacidades da câmera:', e);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Função para detectar se a imagem está focada
+  function detectFocusQuality(imageData) {
+    const data = imageData.data;
+    const width = imageData.width;
+    const height = imageData.height;
+    let edgeCount = 0;
+    
+    // Analisa bordas na imagem (simplificado)
+    for (let y = 1; y < height - 1; y += 2) {
+      for (let x = 1; x < width - 1; x += 2) {
+        const idx = (y * width + x) * 4;
+        const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
+        
+        // Detecta bordas simples
+        const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
+        const bottom = (data[idx + width * 4] + data[idx + width * 4 + 1] + data[idx + width * 4 + 2]) / 3;
+        
+        if (Math.abs(gray - right) > 30 || Math.abs(gray - bottom) > 30) {
+          edgeCount++;
+        }
+      }
+    }
+    
+    const focusScore = edgeCount / ((width * height) / 4);
+    console.log('Score de foco:', focusScore);
+    
+    return {
+      score: focusScore,
+      isFocused: focusScore > 0.1, // Threshold ajustável
+      quality: focusScore > 0.2 ? 'excelente' : focusScore > 0.1 ? 'boa' : 'ruim'
+    };
+  }
+
+  // Função para aplicar foco manual
+  async function applyManualFocus(x, y) {
+    if (!stream || !cameraCapabilities.focusMode) {
+      showStatusMessage('Foco manual não disponível nesta câmera', 'error');
+      return;
+    }
+    
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      // Mostra animação de foco
+      focusIndicator.classList.add('focusing');
+      
+      // Calcula a posição relativa (0-1)
+      const rect = video.getBoundingClientRect();
+      const relativeX = (x - rect.left) / rect.width;
+      const relativeY = (y - rect.top) / rect.height;
+      
+      console.log('Aplicando foco em:', relativeX, relativeY);
+      
+      // Aplica foco manual
+      await track.applyConstraints({
+        advanced: [{
+          focusMode: 'manual',
+          focusDistance: 0.1, // Foco próximo
+          pointsOfInterest: [{ x: relativeX, y: relativeY }]
+        }]
+      });
+      
+      showStatusMessage('Foco aplicado! Aguarde a estabilização...', 'success');
+      
+      // Verifica qualidade do foco após um tempo
+      setTimeout(async () => {
+        try {
+          // Captura frame para análise
+          const w = video.videoWidth;
+          const h = video.videoHeight;
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, w, h);
+          const imageData = ctx.getImageData(0, 0, w, h);
+          
+          const focusQuality = detectFocusQuality(imageData);
+          console.log('Qualidade do foco:', focusQuality);
+          
+          if (focusQuality.isFocused) {
+            showStatusMessage(`Foco ${focusQuality.quality}! Imagem pronta para captura.`, 'success');
+          } else {
+            showStatusMessage('Foco ainda não ideal. Tente novamente.', 'error');
+          }
+          
+          // Retorna para foco automático
+          await track.applyConstraints({
+            advanced: [{
+              focusMode: 'continuous'
+            }]
+          });
+          console.log('Foco automático reativado');
+          focusIndicator.classList.remove('focusing');
+          
+        } catch (e) {
+          console.log('Erro ao verificar foco:', e);
+          focusIndicator.classList.remove('focusing');
+        }
+      }, 3000);
+      
+    } catch (e) {
+      console.log('Erro ao aplicar foco manual:', e);
+      focusIndicator.classList.remove('focusing');
+      showStatusMessage('Erro ao aplicar foco: ' + e.message, 'error');
+    }
+  }
+
+  // Função para foco automático
+  async function applyAutoFocus() {
+    if (!stream) return;
+    
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      focusIndicator.classList.add('focusing');
+      showStatusMessage('Aplicando foco automático...', 'success');
+      
+      // Tenta diferentes modos de foco
+      const focusModes = ['continuous', 'single-shot', 'manual'];
+      
+      for (const mode of focusModes) {
+        if (cameraCapabilities.focusMode.includes(mode)) {
+          try {
+            await track.applyConstraints({
+              advanced: [{
+                focusMode: mode
+              }]
+            });
+            console.log('Foco aplicado com modo:', mode);
+            break;
+          } catch (e) {
+            console.log('Erro com modo de foco:', mode, e);
+          }
+        }
+      }
+      
+      setTimeout(() => {
+        focusIndicator.classList.remove('focusing');
+        showStatusMessage('Foco automático aplicado!', 'success');
+      }, 2000);
+      
+    } catch (e) {
+      console.log('Erro no foco automático:', e);
+      focusIndicator.classList.remove('focusing');
+      showStatusMessage('Erro no foco automático: ' + e.message, 'error');
+    }
+  }
+
+  // Função para melhorar configurações da câmera
+  async function optimizeCameraSettings(stream) {
+    if (!stream || !cameraCapabilities.focusMode) return;
+    
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      const settings = {
+        video: {
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 30, min: 15 }
+        }
+      };
+
+      // Adiciona configurações de foco se disponível
+      if (cameraCapabilities.focusMode.includes('continuous')) {
+        settings.video.focusMode = { ideal: 'continuous' };
+      }
+      
+      if (cameraCapabilities.exposureMode.includes('continuous')) {
+        settings.video.exposureMode = { ideal: 'continuous' };
+      }
+      
+      if (cameraCapabilities.whiteBalanceMode.includes('continuous')) {
+        settings.video.whiteBalanceMode = { ideal: 'continuous' };
+      }
+
+      await track.applyConstraints(settings);
+      console.log('Configurações da câmera otimizadas');
+      
+    } catch (e) {
+      console.log('Erro ao otimizar configurações:', e);
+    }
+  }
+
   async function startCamera(){
     try{
-      // Configuração melhorada da câmera com foco automático
-      const constraints = {
+      // Primeira tentativa com configurações básicas
+      let constraints = {
         video: {
           facingMode: { ideal: 'environment' },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          focusMode: { ideal: 'continuous' },
-          exposureMode: { ideal: 'continuous' },
-          whiteBalanceMode: { ideal: 'continuous' }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 }
         },
         audio: false
       };
 
       stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // Detecta capacidades da câmera
+      await detectCameraCapabilities(stream);
+      
+      // Otimiza configurações baseado nas capacidades
+      await optimizeCameraSettings(stream);
+      
       video.srcObject = stream;
       
       // Aguarda o vídeo carregar
@@ -210,33 +434,61 @@
       
       btnShot.disabled = false;
       btnStop.disabled = false;
+      btnFocus.disabled = false;
+      btnAutoFocus.disabled = false;
       btnStart.disabled = true;
       
-      setStatus('Câmera ligada. Aponte para o CPF e toque em "Capturar & Ler"');
-      showStatusMessage('Câmera ativada com foco automático. Posicione o documento na área destacada.', 'success');
+      setStatus('Câmera ligada. Use os botões de foco ou toque na tela.');
+      showStatusMessage('Câmera ativada! Use os botões de foco para melhorar a qualidade da imagem.', 'success');
       
-      // Auto-foco quando o usuário toca na tela
-      video.addEventListener('click', () => {
-        if (stream && stream.getVideoTracks().length > 0) {
-          const track = stream.getVideoTracks()[0];
-          if (track.getCapabilities && track.getCapabilities().focusMode) {
-            track.applyConstraints({
-              advanced: [{ focusMode: 'manual', focusDistance: 0 }]
-            }).then(() => {
-              setTimeout(() => {
-                track.applyConstraints({
-                  advanced: [{ focusMode: 'continuous' }]
-                });
-              }, 100);
-            }).catch(console.error);
-          }
-        }
+      // Adiciona eventos de toque para foco
+      video.addEventListener('click', (e) => {
+        applyManualFocus(e.clientX, e.clientY);
       });
+      
+      // Adiciona evento de toque no indicador de foco
+      focusIndicator.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const rect = video.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        applyManualFocus(centerX, centerY);
+      });
+      
+      // Adiciona dicas visuais
+      setTimeout(() => {
+        if (focusIndicator.classList.contains('active')) {
+          showStatusMessage('💡 Dica: Use os botões de foco para melhorar a qualidade da imagem', 'success');
+        }
+      }, 3000);
       
     }catch(e){
       console.error('Erro na câmera:', e);
       showStatusMessage('Erro ao acessar câmera: ' + e.message, 'error');
-      alert('Não foi possível acessar a câmera: '+ e.message);
+      
+      // Tenta configuração mais simples se falhar
+      try {
+        console.log('Tentando configuração alternativa...');
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }, 
+          audio: false 
+        });
+        
+        video.srcObject = stream;
+        await video.play();
+        
+        btnShot.disabled = false;
+        btnStop.disabled = false;
+        btnFocus.disabled = false;
+        btnAutoFocus.disabled = false;
+        btnStart.disabled = true;
+        
+        setStatus('Câmera ligada (modo básico)');
+        showStatusMessage('Câmera ativada em modo básico. O foco pode não funcionar automaticamente.', 'error');
+        
+      } catch (e2) {
+        alert('Não foi possível acessar a câmera: ' + e2.message);
+      }
     }
   }
   
@@ -244,16 +496,25 @@
     if(stream){
       stream.getTracks().forEach(t => t.stop());
     }
-    focusIndicator.classList.remove('active');
+    focusIndicator.classList.remove('active', 'focusing');
     btnStart.disabled = false;
     btnShot.disabled = true;
     btnStop.disabled = true;
+    btnFocus.disabled = true;
+    btnAutoFocus.disabled = true;
     setStatus('Câmera desligada');
     hideStatusMessage();
   }
 
   btnStart.onclick = startCamera;
   btnStop.onclick = stopCamera;
+  btnFocus.onclick = () => {
+    const rect = video.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    applyManualFocus(centerX, centerY);
+  };
+  btnAutoFocus.onclick = applyAutoFocus;
 
   // ==== OCR melhorado com Tesseract ====
   async function grabAndOcr(){
@@ -267,8 +528,19 @@
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, w, h);
     
-    // Melhora a imagem antes do OCR
+    // Verifica qualidade do foco antes de processar
     const imageData = ctx.getImageData(0, 0, w, h);
+    const focusQuality = detectFocusQuality(imageData);
+    
+    if (!focusQuality.isFocused) {
+      showStatusMessage('Imagem muito desfocada! Use os botões de foco primeiro.', 'error');
+      setStatus('Foque a imagem antes de capturar');
+      return;
+    }
+    
+    showStatusMessage(`Qualidade do foco: ${focusQuality.quality}. Processando...`, 'success');
+    
+    // Melhora a imagem antes do OCR
     const data = imageData.data;
     
     // Aplica filtros para melhorar o reconhecimento
