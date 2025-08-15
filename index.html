@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Scanner de CPF → Código de Barras</title>
+  <meta name="theme-color" content="#0b1020">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <style>
+    :root { --bg:#0b1020; --card:#121936; --accent:#6ee7ff; --ok:#22c55e; --bad:#ef4444; --txt:#e5e7eb; }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b1020,#0b0f1a);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif}
+    .wrap{max-width:980px;margin:0 auto;padding:16px}
+    .title{display:flex;gap:12px;align-items:center;}
+    .title h1{font-size:clamp(18px,3vw,28px);margin:0}
+    .card{background:var(--card);border:1px solid #263157;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px}
+    .grid{display:grid;gap:14px}
+    @media(min-width:900px){.grid{grid-template-columns:1.2fr .8fr}}
+    video{width:100%;border-radius:14px;background:#000}
+    canvas{display:none}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer;background:#213055;color:#dbeafe;transition:.2s}
+    button:hover{filter:brightness(1.1)}
+    .primary{background:linear-gradient(135deg,#2563eb,#06b6d4);color:white}
+    .ghost{background:#1a2747}
+    input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #2b3a62;background:#0f142b;color:#e5e7eb}
+    label{font-size:12px;opacity:.9}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid #2a365f;background:#0f1732}
+    .ok{color:var(--ok);border-color:#1b6e3b;background:#0b2b18}
+    .bad{color:var(--bad);border-color:#6e1b1b;background:#2b0b0b}
+    .muted{opacity:.8}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    .barcode-wrap{display:grid;place-content:center;background:#0b0f1c;border-radius:12px;padding:14px;border:1px dashed #263157}
+    svg{max-width:100%}
+    .foot{opacity:.7;font-size:12px;margin-top:12px}
+    .progress{height:10px;background:#0f1a35;border-radius:999px;overflow:hidden;border:1px solid #203158}
+    .progress>i{display:block;height:100%;background:linear-gradient(90deg,#1f8ffd,#22d3ee);width:0}
+    .hint{font-size:12px;opacity:.85}
+  </style>
+  <!-- libs via CDN -->
+  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4H4a1 1 0 0 0-1 1v3M17 4h3a1 1 0 0 1 1 1v3M7 20H4a1 1 0 0 1-1-1v-3M17 20h3a1 1 0 0 0 1-1v-3" stroke="#6ee7ff" stroke-width="1.5" stroke-linecap="round"/><rect x="6" y="7" width="12" height="10" rx="2" stroke="#6ee7ff" stroke-width="1.5"/></svg>
+      <h1>Scanner de CPF → Código de Barras</h1>
+    </div>
+
+    <div class="grid">
+      <!-- Lado esquerdo: câmera e OCR -->
+      <div class="card">
+        <div class="row">
+          <button id="btnStart" class="primary">📷 Ligar câmera</button>
+          <button id="btnShot" class="ghost" disabled>🖼️ Capturar & Ler CPF</button>
+          <button id="btnStop" class="ghost" disabled>⏹️ Desligar câmera</button>
+        </div>
+        <div class="hint">Dica: aponte para um documento ou texto que contenha o CPF. Boa luz ajuda o OCR.</div>
+        <video id="video" playsinline muted></video>
+        <canvas id="frame"></canvas>
+        <div class="row" style="margin-top:8px">
+          <div class="progress" style="flex:1"><i id="pbar"></i></div>
+          <span id="status" class="badge muted">Aguardando…</span>
+        </div>
+      </div>
+
+      <!-- Lado direito: resultado, validação e barcode -->
+      <div class="card">
+        <div class="row">
+          <div style="flex:1">
+            <label for="cpf">CPF detectado (edite se necessário)</label>
+            <input id="cpf" inputmode="numeric" placeholder="___.___.___-__" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="btnValidate" class="primary">✅ Validar & Gerar Código</button>
+          </div>
+        </div>
+        <div class="row">
+          <span id="validBadge" class="badge muted">CPF não verificado</span>
+          <select id="symbology" title="Tipo de código de barras">
+            <option value="CODE128" selected>CODE128 (recomendado)</option>
+            <option value="ITF">Interleaved 2 of 5</option>
+            <option value="MSI">MSI</option>
+          </select>
+          <button id="btnDownload" class="ghost" disabled>⬇️ Baixar código de barras (PNG)</button>
+        </div>
+        <div class="barcode-wrap" style="margin-top:8px">
+          <svg id="barcode"></svg>
+        </div>
+        <div class="foot">Privacidade: todo o processamento ocorre no seu dispositivo. Nenhum dado é enviado a servidores.</div>
+      </div>
+    </div>
+
+    <p class="foot">Observação: o CPF possui 11 dígitos e dois dígitos verificadores. O app valida a sequência e remove formatações. Se o OCR errar algum dígito, toque no campo e corrija antes de gerar o código.</p>
+  </div>
+
+<script>
+  // ==== Utilidades CPF ====
+  function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
+  function formatCPF(d){ d = onlyDigits(d).slice(0,11); if(d.length<11) return d; return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
+  function isSeq(d){ return /^([0-9])\1{10}$/.test(d); }
+  function cpfCheckDigits(numbers){
+    const calc = (base, factor) => {
+      let sum = 0; for(let i=0;i<base.length;i++){ sum += parseInt(base[i],10) * (factor - i); }
+      const rest = (sum * 10) % 11; return (rest===10||rest===11)?0:rest;
+    };
+    const n = onlyDigits(numbers);
+    if(n.length!==11 || isSeq(n)) return false;
+    const d1 = calc(n.slice(0,9), 10);
+    const d2 = calc(n.slice(0,10), 11);
+    return d1 === parseInt(n[9],10) && d2 === parseInt(n[10],10);
+  }
+
+  // ==== Câmera ====
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('frame');
+  const btnStart = document.getElementById('btnStart');
+  const btnShot  = document.getElementById('btnShot');
+  const btnStop  = document.getElementById('btnStop');
+  const statusEl = document.getElementById('status');
+  const pbar     = document.getElementById('pbar');
+
+  let stream;
+  async function startCamera(){
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio:false });
+      video.srcObject = stream; await video.play();
+      btnShot.disabled = false; btnStop.disabled = false; btnStart.disabled = true;
+      setStatus('Câmera ligada. Aponte para o CPF e toque em "Capturar & Ler"');
+    }catch(e){ alert('Não foi possível acessar a câmera: '+ e.message); }
+  }
+  function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); } btnStart.disabled=false; btnShot.disabled=true; btnStop.disabled=true; setStatus('Câmera desligada'); }
+
+  btnStart.onclick = startCamera; btnStop.onclick = stopCamera;
+
+  // ==== OCR com Tesseract (API estável) ====
+  async function grabAndOcr(){
+    if(!video.srcObject) return;
+    const w = video.videoWidth, h = video.videoHeight; canvas.width=w; canvas.height=h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL('image/png');
+
+    setStatus('Lendo imagem…'); setProgress(5);
+    const worker = await Tesseract.createWorker({
+      logger: m => { if(m.status && m.progress!=null){ setStatus(m.status); setProgress(Math.round(m.progress*100)); } }
+    });
+    await worker.load();
+    await worker.loadLanguage('por');
+    await worker.initialize('por');
+    const { data:{ text } } = await worker.recognize(dataUrl);
+    await worker.terminate();
+
+    const candidates = extractCpfCandidates(text);
+    if(candidates.length){
+      const validFirst = candidates.sort((a,b)=> (cpfCheckDigits(b)?1:0) - (cpfCheckDigits(a)?1:0));
+      const picked = validFirst[0];
+      setCPF(picked);
+      setStatus('CPF detectado. Revise e gere o código.');
+    } else {
+      setStatus('Não encontrei um CPF claro. Tente aproximar, melhorar a luz ou digitar manualmente.');
+    }
+    setProgress(0);
+  }
+
+  function extractCpfCandidates(text){
+    const raw = (text||'').replace(/[O\-]/g, m=> m==='O'?'0':''); // troca O por 0
+    const digits = raw.match(/\d/g)?.join('') || '';
+    const list = new Set();
+    for(let i=0;i+11<=digits.length;i++){
+      const seq = digits.slice(i,i+11);
+      if(seq.length===11) list.add(seq);
+    }
+    const fmt = raw.match(/\b\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}\b/g) || [];
+    fmt.forEach(f=> list.add(onlyDigits(f)));
+    return Array.from(list).filter(s=> s.length===11);
+  }
+
+  function setStatus(msg){ statusEl.textContent = msg; }
+  function setProgress(v){ pbar.style.width = Math.max(0, Math.min(100, v)) + '%'; }
+
+  const btnOcr = document.getElementById('btnShot');
+  btnOcr.onclick = grabAndOcr;
+
+  // ==== Campo CPF, validação e barcode ====
+  const cpfInput = document.getElementById('cpf');
+  const badge = document.getElementById('validBadge');
+  const btnValidate = document.getElementById('btnValidate');
+  const symSel = document.getElementById('symbology');
+
+  function setCPF(v){ cpfInput.value = formatCPF(v); }
+  cpfInput.addEventListener('input', ()=> { cpfInput.value = formatCPF(cpfInput.value); badge.className='badge muted'; badge.textContent='CPF não verificado'; });
+
+  function markValid(ok){
+    if(ok){ badge.className='badge ok'; badge.textContent='CPF válido'; }
+    else { badge.className='badge bad'; badge.textContent='CPF inválido'; }
+  }
+
+  function generateBarcode(){
+    const val = onlyDigits(cpfInput.value);
+    const type = symSel.value;
+    if(!val || val.length!==11){ markValid(false); alert('Informe um CPF com 11 dígitos.'); return; }
+    const ok = cpfCheckDigits(val);
+    markValid(ok);
+    if(!ok){ alert('CPF inválido pelo cálculo dos dígitos verificadores. Corrija antes de gerar.'); return; }
+    try{
+      JsBarcode('#barcode', val, { format: type, displayValue:true, fontSize:16, margin:10 });
+      document.getElementById('btnDownload').disabled = false;
+    }catch(e){ alert('Erro ao gerar código: ' + e.message); }
+  }
+
+  btnValidate.onclick = generateBarcode;
+
+  // ==== Download do SVG como PNG ====
+  const btnDownload = document.getElementById('btnDownload');
+  btnDownload.onclick = () => {
+    const svg = document.getElementById('barcode');
+    const xml = new XMLSerializer().serializeToString(svg);
+    const svg64 = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      c.getContext('2d').drawImage(img, 0, 0);
+      const link = document.createElement('a');
+      link.download = `barcode_cpf_${onlyDigits(cpfInput.value)}.png`;
+      link.href = c.toDataURL('image/png');
+      link.click();
+    };
+    img.src = svg64;
+  };
+
+  // ==== Service Worker registration ====
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(console.error);
+    });
+  }
+</script>
+</body>
+</html>
