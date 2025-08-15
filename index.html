@@ -87,6 +87,10 @@
           <button id="btnFocus" class="ghost" disabled>🎯 Focar Documento</button>
           <button id="btnAutoFocus" class="ghost" disabled>🔄 Auto Foco</button>
         </div>
+        <div class="row">
+          <button id="btnExposure" class="ghost" disabled>☀️ Ajustar Exposição</button>
+          <button id="btnReset" class="ghost" disabled>🔄 Reset Câmera</button>
+        </div>
         <div class="hint">Dica: aponte para um documento ou texto que contenha o CPF. Boa luz ajuda o OCR.</div>
         <div class="camera-container">
           <video id="video" playsinline muted></video>
@@ -183,6 +187,8 @@
   const btnStop  = document.getElementById('btnStop');
   const btnFocus = document.getElementById('btnFocus');
   const btnAutoFocus = document.getElementById('btnAutoFocus');
+  const btnExposure = document.getElementById('btnExposure');
+  const btnReset = document.getElementById('btnReset');
   const statusEl = document.getElementById('status');
   const pbar     = document.getElementById('pbar');
   const focusIndicator = document.getElementById('focusIndicator');
@@ -190,6 +196,7 @@
 
   let stream;
   let cameraCapabilities = {};
+  let focusCheckInterval = null;
   
   // Função para detectar capacidades da câmera
   async function detectCameraCapabilities(stream) {
@@ -219,37 +226,45 @@
     const width = imageData.width;
     const height = imageData.height;
     let edgeCount = 0;
+    let totalPixels = 0;
     
-    // Analisa bordas na imagem (simplificado)
-    for (let y = 1; y < height - 1; y += 2) {
-      for (let x = 1; x < width - 1; x += 2) {
+    // Analisa bordas na imagem (mais sensível)
+    for (let y = 1; y < height - 1; y += 1) { // Reduzi o step para mais precisão
+      for (let x = 1; x < width - 1; x += 1) {
+        totalPixels++;
         const idx = (y * width + x) * 4;
         const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
         
-        // Detecta bordas simples
+        // Detecta bordas em múltiplas direções
         const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
         const bottom = (data[idx + width * 4] + data[idx + width * 4 + 1] + data[idx + width * 4 + 2]) / 3;
+        const diagonal = (data[idx + width * 4 + 4] + data[idx + width * 4 + 5] + data[idx + width * 4 + 6]) / 3;
         
-        if (Math.abs(gray - right) > 30 || Math.abs(gray - bottom) > 30) {
+        // Threshold mais baixo para detectar mais bordas
+        const threshold = 20; // Reduzido de 30 para 20
+        if (Math.abs(gray - right) > threshold || 
+            Math.abs(gray - bottom) > threshold || 
+            Math.abs(gray - diagonal) > threshold) {
           edgeCount++;
         }
       }
     }
     
-    const focusScore = edgeCount / ((width * height) / 4);
-    console.log('Score de foco:', focusScore);
+    const focusScore = edgeCount / totalPixels;
+    console.log('Score de foco:', focusScore, 'Bordas:', edgeCount, 'Total:', totalPixels);
     
+    // Thresholds ajustados para ser mais sensível
     return {
       score: focusScore,
-      isFocused: focusScore > 0.1, // Threshold ajustável
-      quality: focusScore > 0.2 ? 'excelente' : focusScore > 0.1 ? 'boa' : 'ruim'
+      isFocused: focusScore > 0.05, // Reduzido de 0.1 para 0.05
+      quality: focusScore > 0.15 ? 'excelente' : focusScore > 0.08 ? 'boa' : focusScore > 0.05 ? 'aceitável' : 'ruim'
     };
   }
 
   // Função para aplicar foco manual
   async function applyManualFocus(x, y) {
-    if (!stream || !cameraCapabilities.focusMode) {
-      showStatusMessage('Foco manual não disponível nesta câmera', 'error');
+    if (!stream) {
+      showStatusMessage('Câmera não está ativa', 'error');
       return;
     }
     
@@ -259,6 +274,7 @@
     try {
       // Mostra animação de foco
       focusIndicator.classList.add('focusing');
+      showStatusMessage('Aplicando foco...', 'success');
       
       // Calcula a posição relativa (0-1)
       const rect = video.getBoundingClientRect();
@@ -267,14 +283,61 @@
       
       console.log('Aplicando foco em:', relativeX, relativeY);
       
-      // Aplica foco manual
-      await track.applyConstraints({
-        advanced: [{
+      // Tenta múltiplas estratégias de foco
+      const focusStrategies = [
+        // Estratégia 1: Foco manual com distância próxima
+        {
           focusMode: 'manual',
-          focusDistance: 0.1, // Foco próximo
+          focusDistance: 0.05,
           pointsOfInterest: [{ x: relativeX, y: relativeY }]
-        }]
-      });
+        },
+        // Estratégia 2: Foco manual com distância média
+        {
+          focusMode: 'manual',
+          focusDistance: 0.2,
+          pointsOfInterest: [{ x: relativeX, y: relativeY }]
+        },
+        // Estratégia 3: Foco automático single-shot
+        {
+          focusMode: 'single-shot',
+          pointsOfInterest: [{ x: relativeX, y: relativeY }]
+        }
+      ];
+      
+      let focusApplied = false;
+      
+      for (let i = 0; i < focusStrategies.length; i++) {
+        try {
+          console.log(`Tentativa ${i + 1}:`, focusStrategies[i]);
+          
+          await track.applyConstraints({
+            advanced: [focusStrategies[i]]
+          });
+          
+          focusApplied = true;
+          console.log(`Foco aplicado com estratégia ${i + 1}`);
+          break;
+          
+        } catch (e) {
+          console.log(`Erro na estratégia ${i + 1}:`, e);
+          continue;
+        }
+      }
+      
+      if (!focusApplied) {
+        // Última tentativa: configurações básicas
+        try {
+          await track.applyConstraints({
+            video: {
+              focusMode: 'continuous',
+              exposureMode: 'continuous'
+            }
+          });
+          console.log('Aplicado foco contínuo como fallback');
+        } catch (e) {
+          console.log('Erro no fallback:', e);
+        }
+      }
       
       showStatusMessage('Foco aplicado! Aguarde a estabilização...', 'success');
       
@@ -296,28 +359,75 @@
           if (focusQuality.isFocused) {
             showStatusMessage(`Foco ${focusQuality.quality}! Imagem pronta para captura.`, 'success');
           } else {
-            showStatusMessage('Foco ainda não ideal. Tente novamente.', 'error');
+            showStatusMessage('Foco ainda não ideal. Tente novamente ou ajuste a distância.', 'error');
           }
           
           // Retorna para foco automático
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-          console.log('Foco automático reativado');
+          try {
+            await track.applyConstraints({
+              advanced: [{
+                focusMode: 'continuous'
+              }]
+            });
+            console.log('Foco automático reativado');
+          } catch (e) {
+            console.log('Erro ao reativar foco automático:', e);
+          }
+          
           focusIndicator.classList.remove('focusing');
           
         } catch (e) {
           console.log('Erro ao verificar foco:', e);
           focusIndicator.classList.remove('focusing');
         }
-      }, 3000);
+      }, 4000); // Aumentei o tempo para 4 segundos
       
     } catch (e) {
       console.log('Erro ao aplicar foco manual:', e);
       focusIndicator.classList.remove('focusing');
       showStatusMessage('Erro ao aplicar foco: ' + e.message, 'error');
+    }
+  }
+
+  // Função para ajustar exposição (lidar com brilho)
+  async function adjustExposure() {
+    if (!stream) return;
+    
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      showStatusMessage('Ajustando exposição...', 'success');
+      
+      // Tenta reduzir a exposição para lidar com brilho
+      await track.applyConstraints({
+        advanced: [{
+          exposureMode: 'manual',
+          exposureTime: 1000, // Tempo de exposição menor
+          brightness: 0.8, // Reduz brilho
+          contrast: 1.2 // Aumenta contraste
+        }]
+      });
+      
+      console.log('Exposição ajustada');
+      showStatusMessage('Exposição ajustada para reduzir brilho', 'success');
+      
+      // Retorna para exposição automática após um tempo
+      setTimeout(async () => {
+        try {
+          await track.applyConstraints({
+            advanced: [{
+              exposureMode: 'continuous'
+            }]
+          });
+        } catch (e) {
+          console.log('Erro ao retornar exposição automática:', e);
+        }
+      }, 5000);
+      
+    } catch (e) {
+      console.log('Erro ao ajustar exposição:', e);
+      showStatusMessage('Não foi possível ajustar exposição', 'error');
     }
   }
 
@@ -332,11 +442,14 @@
       focusIndicator.classList.add('focusing');
       showStatusMessage('Aplicando foco automático...', 'success');
       
+      // Primeiro ajusta exposição
+      await adjustExposure();
+      
       // Tenta diferentes modos de foco
       const focusModes = ['continuous', 'single-shot', 'manual'];
       
       for (const mode of focusModes) {
-        if (cameraCapabilities.focusMode.includes(mode)) {
+        if (cameraCapabilities.focusMode && cameraCapabilities.focusMode.includes(mode)) {
           try {
             await track.applyConstraints({
               advanced: [{
@@ -354,7 +467,7 @@
       setTimeout(() => {
         focusIndicator.classList.remove('focusing');
         showStatusMessage('Foco automático aplicado!', 'success');
-      }, 2000);
+      }, 3000);
       
     } catch (e) {
       console.log('Erro no foco automático:', e);
@@ -436,7 +549,12 @@
       btnStop.disabled = false;
       btnFocus.disabled = false;
       btnAutoFocus.disabled = false;
+      btnExposure.disabled = false;
+      btnReset.disabled = false;
       btnStart.disabled = true;
+      
+      // Inicia monitoramento de foco
+      startFocusMonitoring();
       
       setStatus('Câmera ligada. Use os botões de foco ou toque na tela.');
       showStatusMessage('Câmera ativada! Use os botões de foco para melhorar a qualidade da imagem.', 'success');
@@ -481,6 +599,8 @@
         btnStop.disabled = false;
         btnFocus.disabled = false;
         btnAutoFocus.disabled = false;
+        btnExposure.disabled = false;
+        btnReset.disabled = false;
         btnStart.disabled = true;
         
         setStatus('Câmera ligada (modo básico)');
@@ -497,13 +617,20 @@
       stream.getTracks().forEach(t => t.stop());
     }
     focusIndicator.classList.remove('active', 'focusing');
+    focusIndicator.style.borderColor = '';
+    focusIndicator.style.boxShadow = '';
     btnStart.disabled = false;
     btnShot.disabled = true;
     btnStop.disabled = true;
     btnFocus.disabled = true;
     btnAutoFocus.disabled = true;
+    btnExposure.disabled = true;
+    btnReset.disabled = true;
     setStatus('Câmera desligada');
     hideStatusMessage();
+    
+    // Para o monitoramento de foco
+    stopFocusMonitoring();
   }
 
   btnStart.onclick = startCamera;
@@ -515,6 +642,12 @@
     applyManualFocus(centerX, centerY);
   };
   btnAutoFocus.onclick = applyAutoFocus;
+  btnExposure.onclick = adjustExposure;
+  btnReset.onclick = () => {
+    stopCamera();
+    startCamera();
+    showStatusMessage('Câmera resetada e reiniciada.', 'success');
+  };
 
   // ==== OCR melhorado com Tesseract ====
   async function grabAndOcr(){
@@ -769,6 +902,59 @@
           console.error('Erro no SW:', error);
         });
     });
+  }
+
+  // Função para verificação contínua de foco
+  function startFocusMonitoring() {
+    if (focusCheckInterval) {
+      clearInterval(focusCheckInterval);
+    }
+    
+    focusCheckInterval = setInterval(() => {
+      if (!video.srcObject || !video.videoWidth) return;
+      
+      try {
+        const w = video.videoWidth;
+        const h = video.videoHeight;
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, w, h);
+        const imageData = ctx.getImageData(0, 0, w, h);
+        
+        const focusQuality = detectFocusQuality(imageData);
+        
+        // Atualiza o indicador visual baseado na qualidade
+        if (focusQuality.quality === 'excelente') {
+          focusIndicator.style.borderColor = '#22c55e';
+          focusIndicator.style.boxShadow = '0 0 15px rgba(34,197,94,0.3)';
+        } else if (focusQuality.quality === 'boa') {
+          focusIndicator.style.borderColor = '#f59e0b';
+          focusIndicator.style.boxShadow = '0 0 15px rgba(245,158,11,0.3)';
+        } else if (focusQuality.quality === 'aceitável') {
+          focusIndicator.style.borderColor = '#ef4444';
+          focusIndicator.style.boxShadow = '0 0 15px rgba(239,68,68,0.3)';
+        } else {
+          focusIndicator.style.borderColor = '#6b7280';
+          focusIndicator.style.boxShadow = 'none';
+        }
+        
+        // Atualiza o status se a qualidade mudou significativamente
+        if (focusQuality.isFocused && !btnShot.disabled) {
+          setStatus(`Foco ${focusQuality.quality} - Pronto para capturar`);
+        }
+        
+      } catch (e) {
+        console.log('Erro na verificação de foco:', e);
+      }
+    }, 1000); // Verifica a cada segundo
+  }
+  
+  function stopFocusMonitoring() {
+    if (focusCheckInterval) {
+      clearInterval(focusCheckInterval);
+      focusCheckInterval = null;
+    }
   }
 </script>
 </body>
