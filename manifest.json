@@ -1,56 +1,25 @@
 {
-  "name": "Scanner de Documentos - CPF & CNPJ",
+  "name": "Scanner de Documentos - Foco Definitivo",
   "short_name": "Scanner CPF",
-  "description": "Escaneie documentos, extraia CPF/CNPJ e gere códigos de barras",
-  "version": "2.0.1",
+  "description": "Scanner avançado de CPF/CNPJ com foco automático e OCR otimizado",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "background_color": "#667eea",
   "theme_color": "#1e40af",
-  "background_color": "#1e40af",
-  "lang": "pt-BR",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ],
-  "categories": ["productivity", "utilities", "business"],
-  "shortcuts": [
-    {
-      "name": "Escanear CPF",
-      "short_name": "CPF",
-      "description": "Escanear documento CPF",
-      "url": "/?type=cpf",
-      "icons": [
-        {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Escanear CNPJ",
-      "short_name": "CNPJ", 
-      "description": "Escanear documento CNPJ",
-      "url": "/?type=cnpj",
-      "icons": [
-        {
-          "src": "icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    }
-  ]
+  "categories": ["productivity", "utilities"],
+  "lang": "pt-BR"
 }
 

@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scanner de Documentos - CPF & CNPJ</title>
-  <meta name="description" content="Escaneie documentos, extraia CPF/CNPJ e gere códigos de barras de forma rápida e segura.">
-  <meta name="theme-color" content="#1e40af">
-  
-  <!-- PWA Manifest -->
+  <title>Scanner CPF/CNPJ - Ultra Compatível</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#1e40af">
+  <link rel="icon" href="icon-192.png">
   
   <style>
     * {
@@ -22,13 +19,13 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
+      padding: 20px;
       color: #333;
     }
     
     .container {
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
-      padding: 20px;
     }
     
     .header {
@@ -50,155 +47,94 @@
     
     .card {
       background: white;
-      border-radius: 16px;
+      border-radius: 20px;
       padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
       margin-bottom: 20px;
     }
     
-    .input-group {
+    .form-group {
       margin-bottom: 20px;
     }
     
-    .input-group label {
+    label {
       display: block;
       margin-bottom: 8px;
       font-weight: 600;
       color: #374151;
     }
     
-    .input-group input,
-    .input-group select {
+    input, select {
       width: 100%;
-      padding: 12px 16px;
+      padding: 15px;
       border: 2px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 12px;
       font-size: 16px;
-      transition: border-color 0.3s ease;
+      transition: all 0.3s ease;
     }
     
-    .input-group input:focus,
-    .input-group select:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
     
     .btn {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-      color: white;
+      padding: 15px 25px;
       border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
+      border-radius: 12px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
       margin: 5px;
+      display: inline-block;
+      text-decoration: none;
+      text-align: center;
     }
     
     .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
     
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
+    .btn-primary {
+      background: linear-gradient(135deg, #3b82f6, #1e40af);
+      color: white;
     }
     
     .btn-secondary {
       background: linear-gradient(135deg, #6b7280, #4b5563);
-    }
-    
-    .btn-success {
-      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
     }
     
     .btn-danger {
       background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
     }
     
-    .validation-result {
-      padding: 16px;
-      border-radius: 8px;
-      margin: 20px 0;
-      font-weight: 600;
-      text-align: center;
-    }
-    
-    .validation-result.valid {
-      background: #d1fae5;
-      color: #065f46;
-      border: 2px solid #10b981;
-    }
-    
-    .validation-result.invalid {
-      background: #fee2e2;
-      color: #991b1b;
-      border: 2px solid #ef4444;
-    }
-    
-    .validation-result.pending {
-      background: #fef3c7;
-      color: #92400e;
-      border: 2px solid #f59e0b;
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
     }
     
     .camera-section {
       text-align: center;
-      margin: 20px 0;
     }
     
     #video {
       width: 100%;
       max-width: 400px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      height: 300px;
+      border-radius: 12px;
+      background: #f3f4f6;
+      object-fit: cover;
+      cursor: pointer;
+      border: 3px solid #3b82f6;
     }
     
     #canvas {
       display: none;
-    }
-    
-    .barcode-result {
-      text-align: center;
-      margin: 20px 0;
-    }
-    
-    #barcode {
-      max-width: 100%;
-      height: auto;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 10px;
-      background: white;
-    }
-    
-    .loading {
-      display: none;
-      text-align: center;
-      padding: 20px;
-    }
-    
-    .loading.show {
-      display: block;
-    }
-    
-    .spinner {
-      border: 4px solid #f3f4f6;
-      border-top: 4px solid #3b82f6;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 10px;
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
     }
     
     .hidden {
@@ -209,57 +145,128 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      background: #1f2937;
-      color: white;
-      padding: 16px 20px;
+      padding: 15px 20px;
       border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      color: white;
+      font-weight: 600;
       z-index: 1000;
-      transform: translateX(400px);
-      transition: transform 0.3s ease;
+      animation: slideIn 0.3s ease;
+      max-width: 300px;
     }
     
-    .toast.show {
-      transform: translateX(0);
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+    .toast.info { background: #3b82f6; }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
     }
     
-    .toast.success {
-      background: #10b981;
+    .processing-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      color: white;
+      text-align: center;
     }
     
-    .toast.error {
-      background: #ef4444;
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .result-section {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f0f9ff;
+      border: 2px solid #0ea5e9;
+      border-radius: 12px;
+    }
+    
+    .result-section.success {
+      background: #f0fdf4;
+      border-color: #22c55e;
+    }
+    
+    .result-section.error {
+      background: #fef2f2;
+      border-color: #ef4444;
+    }
+    
+    .ocr-preview {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .tips {
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    
+    .tips h3 {
+      color: #92400e;
+      margin-bottom: 10px;
+    }
+    
+    .tips ul {
+      color: #92400e;
+      padding-left: 20px;
+    }
+    
+    .tips li {
+      margin-bottom: 5px;
     }
     
     @media (max-width: 768px) {
-      .container {
-        padding: 10px;
-      }
-      
-      .header h1 {
-        font-size: 2rem;
-      }
-      
-      .card {
-        padding: 20px;
-      }
+      body { padding: 10px; }
+      .header h1 { font-size: 2rem; }
+      .card { padding: 20px; }
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>📱 Scanner de Documentos</h1>
-      <p>Escaneie CPF/CNPJ e gere códigos de barras</p>
+      <h1>📱 Scanner CPF/CNPJ</h1>
+      <p>Versão Ultra Compatível com OCR Avançado</p>
     </div>
     
     <div class="card">
-      <div class="input-group">
+      <div class="form-group">
         <label for="document-input">Digite ou escaneie o documento:</label>
-        <input type="text" id="document-input" placeholder="Ex: 123.456.789-00" maxlength="18">
+        <input type="text" id="document-input" placeholder="Ex: 123.456.789-00">
       </div>
       
-      <div class="input-group">
+      <div class="form-group">
         <label for="document-type">Tipo de documento:</label>
         <select id="document-type">
           <option value="cpf">CPF</option>
@@ -268,89 +275,100 @@
       </div>
       
       <div style="text-align: center;">
-        <button class="btn" onclick="validateDocument()">✅ Validar Documento</button>
-        <button class="btn btn-secondary" onclick="toggleCamera()">📷 Câmera</button>
-        <button class="btn btn-secondary" onclick="clearAll()">🗑️ Limpar</button>
-      </div>
-      
-      <div id="validation-result" class="validation-result hidden">
-        <span id="validation-text"></span>
+        <button class="btn btn-primary" onclick="validateDocument()">✅ Validar Documento</button>
+        <button class="btn btn-secondary" onclick="toggleCamera()">📷 Scanner</button>
+        <button class="btn btn-danger" onclick="clearForm()">🗑️ Limpar</button>
       </div>
     </div>
     
+    <!-- Seção da Câmera -->
     <div class="card camera-section hidden" id="camera-section">
-      <h3 style="text-align: center; margin-bottom: 20px;">📷 Scanner de Câmera</h3>
-      <video id="video" autoplay playsinline></video>
-      <canvas id="canvas"></canvas>
+      <h3 style="margin-bottom: 20px;">📷 Scanner de Documentos</h3>
+      
+      <div style="text-align: center;">
+        <video id="video" autoplay playsinline muted title="Clique para tentar focar"></video>
+        <canvas id="canvas"></canvas>
+      </div>
+      
       <div style="text-align: center; margin-top: 15px;">
-        <button class="btn" onclick="captureImage()">📸 Capturar</button>
-        <button class="btn btn-secondary" onclick="focusCamera()">🔍 Focar</button>
+        <button class="btn btn-success" onclick="captureAndProcess()">📸 Capturar e Processar</button>
         <button class="btn btn-danger" onclick="stopCamera()">❌ Fechar</button>
       </div>
-      
-      <!-- Controles de Foco -->
-      <div id="focus-controls" class="focus-controls hidden" style="margin-top: 15px;">
-        <div style="text-align: center; margin-bottom: 10px;">
-          <label for="focus-slider" style="display: block; margin-bottom: 5px; font-weight: 600;">
-            🔍 Ajuste de Foco Manual
-          </label>
-          <input type="range" id="focus-slider" min="0" max="1" step="0.1" value="0.1" 
-                 style="width: 80%; margin-bottom: 10px;">
-          <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
-            <button class="btn btn-secondary" onclick="setFocusMode('continuous')" style="font-size: 12px; padding: 8px 12px;">
-              🔄 Auto
-            </button>
-            <button class="btn btn-secondary" onclick="setFocusMode('manual')" style="font-size: 12px; padding: 8px 12px;">
-              ✋ Manual
-            </button>
-            <button class="btn btn-secondary" onclick="triggerAutoFocus()" style="font-size: 12px; padding: 8px 12px;">
-              ⚡ Focar
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="loading" id="ocr-loading">
-        <div class="spinner"></div>
-        <p>Processando imagem...</p>
-      </div>
     </div>
     
-    <div class="card barcode-result hidden" id="barcode-section">
-      <h3 style="text-align: center; margin-bottom: 20px;">📊 Código de Barras</h3>
-      <div style="text-align: center;">
-        <svg id="barcode"></svg>
-      </div>
-      <div style="text-align: center; margin-top: 15px;">
-        <button class="btn btn-success" onclick="downloadBarcode()">💾 Baixar</button>
-      </div>
+    <!-- Dicas de Uso -->
+    <div class="tips">
+      <h3>💡 Dicas para Melhor Resultado:</h3>
+      <ul>
+        <li><strong>Iluminação:</strong> Use boa luz, evite sombras</li>
+        <li><strong>Estabilidade:</strong> Mantenha o celular firme</li>
+        <li><strong>Distância:</strong> 15-25cm do documento</li>
+        <li><strong>Foco:</strong> Toque na tela para tentar focar</li>
+        <li><strong>Qualidade:</strong> Documento limpo e sem dobras</li>
+        <li><strong>Enquadramento:</strong> Centralize o CPF/CNPJ</li>
+      </ul>
+    </div>
+    
+    <!-- Seção de Resultados -->
+    <div id="result-section" class="hidden"></div>
+  </div>
+  
+  <!-- Overlay de Processamento -->
+  <div id="processing-overlay" class="processing-overlay hidden">
+    <div>
+      <div class="spinner"></div>
+      <h3>Processando imagem...</h3>
+      <p>Aplicando filtros avançados e reconhecendo texto</p>
     </div>
   </div>
   
-  <!-- External Libraries -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   
   <script>
-    // Global variables
+    // Variáveis globais
     let stream = null;
-    let isValidating = false;
     let currentTrack = null;
-    let focusCapabilities = null;
+    let isProcessing = false;
     
-    // Document validation functions
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Scanner CPF/CNPJ - Versão Ultra Compatível');
+      showToast('Scanner carregado! Pronto para uso', 'success');
+      
+      // Registrar service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('SW registrado'))
+          .catch(err => console.log('Erro SW:', err));
+      }
+    });
+    
+    // Função de toast
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 4000);
+    }
+    
+    // Validação de documentos
     function validateCPF(cpf) {
       cpf = cpf.replace(/[^\d]/g, '');
-      
-      if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
-        return false;
-      }
+      if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
       
       let sum = 0;
       for (let i = 0; i < 9; i++) {
         sum += parseInt(cpf.charAt(i)) * (10 - i);
       }
-      let remainder = (sum * 10) % 11;
+      let remainder = 11 - (sum % 11);
       if (remainder === 10 || remainder === 11) remainder = 0;
       if (remainder !== parseInt(cpf.charAt(9))) return false;
       
@@ -358,120 +376,78 @@
       for (let i = 0; i < 10; i++) {
         sum += parseInt(cpf.charAt(i)) * (11 - i);
       }
-      remainder = (sum * 10) % 11;
+      remainder = 11 - (sum % 11);
       if (remainder === 10 || remainder === 11) remainder = 0;
-      if (remainder !== parseInt(cpf.charAt(10))) return false;
-      
-      return true;
+      return remainder === parseInt(cpf.charAt(10));
     }
     
     function validateCNPJ(cnpj) {
       cnpj = cnpj.replace(/[^\d]/g, '');
+      if (cnpj.length !== 14) return false;
       
-      if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) {
-        return false;
-      }
+      const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+      const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
       
-      let length = cnpj.length - 2;
-      let numbers = cnpj.substring(0, length);
-      let digits = cnpj.substring(length);
       let sum = 0;
-      let pos = length - 7;
-      
-      for (let i = length; i >= 1; i--) {
-        sum += numbers.charAt(length - i) * pos--;
-        if (pos < 2) pos = 9;
+      for (let i = 0; i < 12; i++) {
+        sum += parseInt(cnpj.charAt(i)) * weights1[i];
       }
+      let remainder = sum % 11;
+      const digit1 = remainder < 2 ? 0 : 11 - remainder;
+      if (digit1 !== parseInt(cnpj.charAt(12))) return false;
       
-      let result = sum % 11 < 2 ? 0 : 11 - sum % 11;
-      if (result !== parseInt(digits.charAt(0))) return false;
-      
-      length = length + 1;
-      numbers = cnpj.substring(0, length);
       sum = 0;
-      pos = length - 7;
-      
-      for (let i = length; i >= 1; i--) {
-        sum += numbers.charAt(length - i) * pos--;
-        if (pos < 2) pos = 9;
+      for (let i = 0; i < 13; i++) {
+        sum += parseInt(cnpj.charAt(i)) * weights2[i];
       }
-      
-      result = sum % 11 < 2 ? 0 : 11 - sum % 11;
-      if (result !== parseInt(digits.charAt(1))) return false;
-      
-      return true;
+      remainder = sum % 11;
+      const digit2 = remainder < 2 ? 0 : 11 - remainder;
+      return digit2 === parseInt(cnpj.charAt(13));
     }
     
     function formatDocument(value, type) {
       const numbers = value.replace(/[^\d]/g, '');
-      
       if (type === 'cpf') {
         return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-      } else if (type === 'cnpj') {
+      } else {
         return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
       }
-      
-      return numbers;
     }
     
-    // Main validation function
     function validateDocument() {
-      if (isValidating) return;
-      
       const input = document.getElementById('document-input');
-      const typeSelect = document.getElementById('document-type');
-      const resultDiv = document.getElementById('validation-result');
-      const resultText = document.getElementById('validation-text');
+      const type = document.getElementById('document-type').value;
+      const value = input.value.trim();
       
-      const documentValue = input.value.trim();
-      const type = typeSelect.value;
-      
-      if (!documentValue) {
+      if (!value) {
         showToast('Por favor, digite um documento', 'error');
         return;
       }
       
-      isValidating = true;
-      
-      // Format document
-      const formatted = formatDocument(documentValue, type);
+      const formatted = formatDocument(value, type);
       input.value = formatted;
       
-      // Validate
-      let isValid = false;
-      if (type === 'cpf') {
-        isValid = validateCPF(formatted);
-      } else if (type === 'cnpj') {
-        isValid = validateCNPJ(formatted);
-      }
+      const isValid = type === 'cpf' ? validateCPF(value) : validateCNPJ(value);
       
-      // Show result
-      resultDiv.className = `validation-result ${isValid ? 'valid' : 'invalid'}`;
-      resultText.textContent = isValid 
-        ? `✅ ${type.toUpperCase()} válido!` 
-        : `❌ ${type.toUpperCase()} inválido!`;
-      resultDiv.classList.remove('hidden');
+      const resultSection = document.getElementById('result-section');
+      resultSection.className = `result-section ${isValid ? 'success' : 'error'}`;
+      resultSection.innerHTML = `
+        <h3>${isValid ? '✅' : '❌'} ${type.toUpperCase()}: ${isValid ? 'Válido' : 'Inválido'}</h3>
+        <p><strong>Documento:</strong> ${formatted}</p>
+        ${isValid ? generateBarcode(value, type) : ''}
+      `;
+      resultSection.classList.remove('hidden');
       
-      // Generate barcode if valid
-      if (isValid) {
-        generateBarcode(formatted.replace(/[^\d]/g, ''));
-        showToast('Documento validado com sucesso!', 'success');
-      } else {
-        hideBarcode();
-        showToast('Documento inválido', 'error');
-      }
-      
-      isValidating = false;
+      showToast(`${type.toUpperCase()} ${isValid ? 'válido' : 'inválido'}!`, isValid ? 'success' : 'error');
     }
     
-    // Barcode generation
-    function generateBarcode(text) {
+    function generateBarcode(value, type) {
+      const canvas = document.createElement('canvas');
+      const cleanValue = value.replace(/[^\d]/g, '');
+      
       try {
-        const barcodeSection = document.getElementById('barcode-section');
-        const barcodeSvg = document.getElementById('barcode');
-        
-        JsBarcode(barcodeSvg, text, {
-          format: "CODE128",
+        JsBarcode(canvas, cleanValue, {
+          format: 'CODE128',
           width: 2,
           height: 100,
           displayValue: true,
@@ -479,41 +455,36 @@
           margin: 10
         });
         
-        barcodeSection.classList.remove('hidden');
+        return `
+          <div style="margin-top: 15px; text-align: center;">
+            <h4>📊 Código de Barras</h4>
+            <div style="margin: 10px 0;">
+              ${canvas.outerHTML}
+            </div>
+            <button class="btn btn-secondary" onclick="downloadBarcode('${canvas.toDataURL()}', '${type}_${cleanValue}')">
+              💾 Download PNG
+            </button>
+          </div>
+        `;
       } catch (error) {
-        console.error('Erro ao gerar código de barras:', error);
-        showToast('Erro ao gerar código de barras', 'error');
+        return '<p style="color: #ef4444;">Erro ao gerar código de barras</p>';
       }
     }
     
-    function hideBarcode() {
-      document.getElementById('barcode-section').classList.add('hidden');
+    function downloadBarcode(dataUrl, filename) {
+      const link = document.createElement('a');
+      link.download = `${filename}.png`;
+      link.href = dataUrl;
+      link.click();
     }
     
-    function downloadBarcode() {
-      const svg = document.getElementById('barcode');
-      const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      
-      img.onload = function() {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-        
-        const link = document.createElement('a');
-        link.download = 'codigo-barras.png';
-        link.href = canvas.toDataURL();
-        link.click();
-      };
-      
-      img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+    function clearForm() {
+      document.getElementById('document-input').value = '';
+      document.getElementById('result-section').classList.add('hidden');
+      showToast('Formulário limpo', 'info');
     }
     
-    // Camera functions
+    // Funções da câmera - ULTRA SIMPLIFICADAS
     async function toggleCamera() {
       const cameraSection = document.getElementById('camera-section');
       
@@ -526,469 +497,76 @@
     
     async function startCamera() {
       try {
-        const cameraSection = document.getElementById('camera-section');
-        const video = document.getElementById('video');
+        showToast('Iniciando câmera...', 'info');
         
-        // Configurações mais agressivas de câmera com foco forçado
+        // Configuração ULTRA BÁSICA - só o essencial
         const constraints = {
           video: {
-            facingMode: 'environment',
-            width: { ideal: 1920, min: 1280 },
-            height: { ideal: 1080, min: 720 },
-            // Configurações de foco mais agressivas
-            focusMode: 'continuous',
-            focusDistance: { ideal: 0.15, min: 0.1, max: 0.5 },
-            // Configurações de exposição otimizadas
-            exposureMode: 'continuous',
-            exposureCompensation: { ideal: 0 },
-            whiteBalanceMode: 'continuous',
-            // Configurações de zoom e qualidade
-            zoom: { ideal: 1.2, min: 1.0, max: 2.0 },
-            // Forçar auto-foco
-            torch: false
+            facingMode: 'environment'
           }
         };
         
         stream = await navigator.mediaDevices.getUserMedia(constraints);
         
+        const video = document.getElementById('video');
         video.srcObject = stream;
         
-        // Aguardar o vídeo carregar completamente
+        // Aguardar carregamento
         await new Promise((resolve) => {
           video.onloadedmetadata = () => {
             video.play().then(resolve);
           };
         });
         
-        // Aplicar configurações avançadas de foco de forma mais agressiva
-        const track = stream.getVideoTracks()[0];
-        const capabilities = track.getCapabilities();
+        // Configurar track básico
+        currentTrack = stream.getVideoTracks()[0];
         
-        console.log('Capacidades da câmera:', capabilities);
+        // Tentar aplicar foco básico se possível (sem forçar)
+        try {
+          const capabilities = currentTrack.getCapabilities();
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            await currentTrack.applyConstraints({ focusMode: 'continuous' });
+            console.log('Foco contínuo aplicado');
+          }
+        } catch (focusError) {
+          console.log('Foco não disponível:', focusError.message);
+        }
         
-        // Múltiplas tentativas de configuração de foco
-        await applyFocusSettings(track, capabilities);
+        // Mostrar seção
+        document.getElementById('camera-section').classList.remove('hidden');
         
-        cameraSection.classList.remove('hidden');
+        // Adicionar evento de toque simples
+        video.addEventListener('click', handleVideoClick);
+        video.addEventListener('touchstart', handleVideoClick);
         
-        // Adicionar controles de foco manual
-        addFocusControls(track, capabilities);
-        
-        // Armazenar referências globais
-        currentTrack = track;
-        focusCapabilities = capabilities;
-        
-        // Adicionar evento de toque para focar
-        addTouchToFocus(video);
-        
-        // Iniciar foco automático periódico
-        startPeriodicFocus();
-        
-        // Iniciar detecção de movimento
-        startMotionDetection(video);
-        
-        // Iniciar detecção de orientação
-        startOrientationDetection();
-        
-        showToast('Câmera ativada com foco avançado - Toque na tela para focar', 'success');
+        showToast('Câmera ativada! Toque na tela para tentar focar', 'success');
         
       } catch (error) {
-        console.error('Erro ao acessar câmera:', error);
-        
-        // Fallback mais simples mas ainda com tentativa de foco
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-              facingMode: 'environment',
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
-            } 
-          });
-          
-          const video = document.getElementById('video');
-          video.srcObject = stream;
-          
-          await new Promise((resolve) => {
-            video.onloadedmetadata = () => {
-              video.play().then(resolve);
-            };
-          });
-          
-          const track = stream.getVideoTracks()[0];
-          currentTrack = track;
-          
-          // Tentar aplicar foco básico mesmo no fallback
-          try {
-            await track.applyConstraints({
-              focusMode: 'continuous'
-            });
-          } catch (focusError) {
-            console.log('Foco automático não disponível');
-          }
-          
-          document.getElementById('camera-section').classList.remove('hidden');
-          addTouchToFocus(video);
-          
-          // Iniciar detecção de orientação mesmo no fallback
-          startOrientationDetection();
-          
-          showToast('Câmera ativada (modo básico) - Toque na tela para focar', 'success');
-        } catch (fallbackError) {
-          showToast('Erro ao acessar câmera', 'error');
-        }
+        console.error('Erro ao iniciar câmera:', error);
+        showToast('Erro ao acessar câmera. Verifique as permissões.', 'error');
       }
     }
     
-    // Função para aplicar configurações de foco de forma robusta
-    async function applyFocusSettings(track, capabilities) {
-      const focusStrategies = [
-        // Estratégia 1: Foco contínuo com distância específica
-        async () => {
-          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-            await track.applyConstraints({
-              focusMode: 'continuous',
-              focusDistance: 0.15
-            });
-            console.log('Aplicado: foco contínuo com distância 0.15');
-          }
-        },
-        
-        // Estratégia 2: Foco manual forçado
-        async () => {
-          if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
-            await track.applyConstraints({
-              focusMode: 'manual',
-              focusDistance: 0.2
-            });
-            await new Promise(resolve => setTimeout(resolve, 500));
-            await track.applyConstraints({
-              focusMode: 'continuous'
-            });
-            console.log('Aplicado: foco manual -> contínuo');
-          }
-        },
-        
-        // Estratégia 3: Single-shot repetido
-        async () => {
-          if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
-            for (let i = 0; i < 3; i++) {
-              await track.applyConstraints({
-                focusMode: 'single-shot'
-              });
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
-            await track.applyConstraints({
-              focusMode: 'continuous'
-            });
-            console.log('Aplicado: múltiplos single-shot');
-          }
-        },
-        
-        // Estratégia 4: Configurações avançadas
-        async () => {
-          const advancedConstraints = {
-            advanced: [{
-              focusMode: 'continuous',
-              focusDistance: { ideal: 0.15, min: 0.1, max: 0.3 }
-            }]
-          };
-          
-          if (capabilities.focusDistance) {
-            await track.applyConstraints(advancedConstraints);
-            console.log('Aplicado: configurações avançadas');
-          }
-        }
-      ];
-      
-      // Tentar cada estratégia
-      for (const strategy of focusStrategies) {
-        try {
-          await strategy();
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } catch (error) {
-          console.log('Estratégia de foco falhou:', error.message);
-        }
-      }
-    }
-    
-    // Adicionar toque na tela para focar
-    function addTouchToFocus(video) {
-      // Remover listeners anteriores
-      video.removeEventListener('click', handleTouchToFocus);
-      video.removeEventListener('touchstart', handleTouchToFocus);
-      
-      // Adicionar novos listeners
-      video.addEventListener('click', handleTouchToFocus);
-      video.addEventListener('touchstart', handleTouchToFocus);
-      
-      // Adicionar indicador visual
-      video.style.cursor = 'crosshair';
-      video.title = 'Toque para focar';
-    }
-    
-    // Handler para toque na tela
-    async function handleTouchToFocus(event) {
+    function handleVideoClick(event) {
       event.preventDefault();
       
       if (!currentTrack) return;
       
-      // Mostrar indicador visual de foco
-      showFocusIndicator(event);
-      
-      // Aplicar foco agressivo
-      await performAggressiveFocus();
-    }
-    
-    // Mostrar indicador visual de foco
-    function showFocusIndicator(event) {
-      const video = event.target;
-      const rect = video.getBoundingClientRect();
-      
-      // Calcular posição relativa
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      
-      // Criar indicador de foco
-      const indicator = document.createElement('div');
-      indicator.style.cssText = `
-        position: absolute;
-        left: ${x - 25}px;
-        top: ${y - 25}px;
-        width: 50px;
-        height: 50px;
-        border: 2px solid #00ff00;
-        border-radius: 50%;
-        pointer-events: none;
-        z-index: 1000;
-        animation: focusRing 1s ease-out;
-      `;
-      
-      // Adicionar animação CSS se não existir
-      if (!document.getElementById('focus-animation-style')) {
-        const style = document.createElement('style');
-        style.id = 'focus-animation-style';
-        style.textContent = `
-          @keyframes focusRing {
-            0% { transform: scale(1.5); opacity: 0; }
-            50% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0.8); opacity: 0; }
-          }
-        `;
-        document.head.appendChild(style);
-      }
-      
-      // Adicionar ao container da câmera
-      const cameraSection = document.getElementById('camera-section');
-      cameraSection.style.position = 'relative';
-      cameraSection.appendChild(indicator);
-      
-      // Remover após animação
-      setTimeout(() => {
-        if (indicator.parentNode) {
-          indicator.parentNode.removeChild(indicator);
-        }
-      }, 1000);
-    }
-    
-    // Foco agressivo com múltiplas tentativas
-    async function performAggressiveFocus() {
-      if (!currentTrack) return;
-      
+      // Tentar aplicar foco simples
       try {
-        showToast('Focalizando...', 'info');
-        
-        // Sequência de foco agressiva
-        const focusSequence = [
-          // 1. Reset para manual
-          { focusMode: 'manual', focusDistance: 0.5 },
-          // 2. Foco próximo
-          { focusMode: 'manual', focusDistance: 0.1 },
-          // 3. Foco médio
-          { focusMode: 'manual', focusDistance: 0.2 },
-          // 4. Voltar para contínuo
-          { focusMode: 'continuous', focusDistance: 0.15 }
-        ];
-        
-        for (const constraint of focusSequence) {
-          try {
-            await currentTrack.applyConstraints(constraint);
-            await new Promise(resolve => setTimeout(resolve, 150));
-          } catch (error) {
-            console.log('Constraint falhou:', constraint, error.message);
-          }
-        }
-        
-        // Trigger adicional de single-shot se disponível
-        if (focusCapabilities && focusCapabilities.focusMode && 
-            focusCapabilities.focusMode.includes('single-shot')) {
-          try {
-            await currentTrack.applyConstraints({ focusMode: 'single-shot' });
-            await new Promise(resolve => setTimeout(resolve, 500));
-            await currentTrack.applyConstraints({ focusMode: 'continuous' });
-          } catch (error) {
-            console.log('Single-shot falhou:', error.message);
-          }
-        }
-        
-        showToast('Foco aplicado!', 'success');
-        
-      } catch (error) {
-        console.error('Erro no foco agressivo:', error);
-        showToast('Erro ao aplicar foco', 'error');
-      }
-    }
-    
-    // Foco automático periódico
-    let focusInterval;
-    let motionDetectionInterval;
-    let lastFrameData = null;
-    
-    function startPeriodicFocus() {
-      // Limpar interval anterior
-      if (focusInterval) {
-        clearInterval(focusInterval);
-      }
-      
-      // Aplicar foco a cada 5 segundos
-      focusInterval = setInterval(async () => {
-        if (currentTrack && focusCapabilities) {
-          try {
-            // Foco suave periódico
-            if (focusCapabilities.focusMode && 
-                focusCapabilities.focusMode.includes('single-shot')) {
-              await currentTrack.applyConstraints({ focusMode: 'single-shot' });
-              await new Promise(resolve => setTimeout(resolve, 200));
-              await currentTrack.applyConstraints({ focusMode: 'continuous' });
-            }
-          } catch (error) {
-            console.log('Foco periódico falhou:', error.message);
-          }
-        }
-      }, 5000);
-    }
-    
-    // Detecção de movimento para re-foco automático
-    function startMotionDetection(video) {
-      // Limpar interval anterior
-      if (motionDetectionInterval) {
-        clearInterval(motionDetectionInterval);
-      }
-      
-      // Criar canvas para análise de movimento
-      const motionCanvas = document.createElement('canvas');
-      const motionCtx = motionCanvas.getContext('2d');
-      
-      // Configurar canvas
-      motionCanvas.width = 160; // Resolução baixa para performance
-      motionCanvas.height = 120;
-      
-      let motionThreshold = 30; // Limiar de movimento
-      let consecutiveMotionFrames = 0;
-      
-      // Verificar movimento a cada 500ms
-      motionDetectionInterval = setInterval(() => {
-        if (!video.videoWidth || !video.videoHeight) return;
-        
-        try {
-          // Capturar frame atual
-          motionCtx.drawImage(video, 0, 0, motionCanvas.width, motionCanvas.height);
-          const currentFrameData = motionCtx.getImageData(0, 0, motionCanvas.width, motionCanvas.height);
-          
-          if (lastFrameData) {
-            // Calcular diferença entre frames
-            const motionLevel = calculateMotionLevel(lastFrameData.data, currentFrameData.data);
-            
-            if (motionLevel > motionThreshold) {
-              consecutiveMotionFrames++;
-              
-              // Se detectar movimento por 2 frames consecutivos, aplicar re-foco
-              if (consecutiveMotionFrames >= 2) {
-                triggerMotionRefocus();
-                consecutiveMotionFrames = 0;
-              }
-            } else {
-              consecutiveMotionFrames = 0;
-            }
-          }
-          
-          lastFrameData = currentFrameData;
-          
-        } catch (error) {
-          console.log('Erro na detecção de movimento:', error.message);
-        }
-      }, 500);
-    }
-    
-    // Calcular nível de movimento entre dois frames
-    function calculateMotionLevel(prevData, currData) {
-      let totalDiff = 0;
-      const pixelCount = prevData.length / 4; // 4 bytes por pixel (RGBA)
-      
-      for (let i = 0; i < prevData.length; i += 4) {
-        // Calcular diferença em escala de cinza
-        const prevGray = (prevData[i] + prevData[i + 1] + prevData[i + 2]) / 3;
-        const currGray = (currData[i] + currData[i + 1] + currData[i + 2]) / 3;
-        
-        totalDiff += Math.abs(prevGray - currGray);
-      }
-      
-      return totalDiff / pixelCount;
-    }
-    
-    // Re-foco automático por movimento
-    async function triggerMotionRefocus() {
-      if (!currentTrack || !focusCapabilities) return;
-      
-      try {
-        console.log('Movimento detectado - aplicando re-foco');
-        
-        // Re-foco rápido por movimento
-        if (focusCapabilities.focusMode && 
-            focusCapabilities.focusMode.includes('single-shot')) {
-          await currentTrack.applyConstraints({ focusMode: 'single-shot' });
-          await new Promise(resolve => setTimeout(resolve, 300));
-          await currentTrack.applyConstraints({ focusMode: 'continuous' });
-        } else if (focusCapabilities.focusMode && 
-                   focusCapabilities.focusMode.includes('manual')) {
-          // Sequência rápida manual->contínuo
-          await currentTrack.applyConstraints({ 
-            focusMode: 'manual', 
-            focusDistance: 0.15 
+        currentTrack.applyConstraints({ focusMode: 'single-shot' })
+          .then(() => {
+            showToast('Tentando focar...', 'info');
+            setTimeout(() => {
+              currentTrack.applyConstraints({ focusMode: 'continuous' })
+                .catch(() => {});
+            }, 500);
+          })
+          .catch(() => {
+            showToast('Foco não suportado neste dispositivo', 'error');
           });
-          await new Promise(resolve => setTimeout(resolve, 100));
-          await currentTrack.applyConstraints({ focusMode: 'continuous' });
-        }
-        
       } catch (error) {
-        console.log('Erro no re-foco por movimento:', error.message);
-      }
-    }
-    
-    // Detecção de orientação do dispositivo para re-foco
-    function startOrientationDetection() {
-      if (window.DeviceOrientationEvent) {
-        let lastOrientation = { alpha: 0, beta: 0, gamma: 0 };
-        let orientationChangeThreshold = 15; // graus
-        
-        window.addEventListener('deviceorientation', (event) => {
-          const { alpha, beta, gamma } = event;
-          
-          // Calcular mudança na orientação
-          const alphaChange = Math.abs(alpha - lastOrientation.alpha);
-          const betaChange = Math.abs(beta - lastOrientation.beta);
-          const gammaChange = Math.abs(gamma - lastOrientation.gamma);
-          
-          // Se mudança significativa, aplicar re-foco
-          if (alphaChange > orientationChangeThreshold || 
-              betaChange > orientationChangeThreshold || 
-              gammaChange > orientationChangeThreshold) {
-            
-            console.log('Mudança de orientação detectada - aplicando re-foco');
-            triggerMotionRefocus();
-            
-            lastOrientation = { alpha, beta, gamma };
-          }
-        });
+        console.log('Erro no foco:', error.message);
       }
     }
     
@@ -997,291 +575,268 @@
         stream.getTracks().forEach(track => track.stop());
         stream = null;
         currentTrack = null;
-        focusCapabilities = null;
       }
-      
-      // Limpar intervals
-      if (focusInterval) {
-        clearInterval(focusInterval);
-        focusInterval = null;
-      }
-      
-      if (motionDetectionInterval) {
-        clearInterval(motionDetectionInterval);
-        motionDetectionInterval = null;
-      }
-      
-      // Limpar dados de movimento
-      lastFrameData = null;
       
       document.getElementById('camera-section').classList.add('hidden');
-      document.getElementById('focus-controls').classList.add('hidden');
-      showToast('Câmera desativada', 'success');
+      showToast('Câmera desativada', 'info');
     }
     
-    // Funções de controle de foco
-    function addFocusControls(track, capabilities) {
-      const focusControls = document.getElementById('focus-controls');
+    // Captura e processamento com OCR SUPER OTIMIZADO
+    async function captureAndProcess() {
+      if (!stream || isProcessing) return;
       
-      if (capabilities.focusMode || capabilities.focusDistance) {
-        focusControls.classList.remove('hidden');
+      isProcessing = true;
+      const overlay = document.getElementById('processing-overlay');
+      overlay.classList.remove('hidden');
+      
+      try {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
         
-        // Configurar slider de foco
-        const focusSlider = document.getElementById('focus-slider');
-        if (capabilities.focusDistance) {
-          focusSlider.min = capabilities.focusDistance.min || 0;
-          focusSlider.max = capabilities.focusDistance.max || 1;
-          focusSlider.step = 0.05;
-          
-          focusSlider.addEventListener('input', (e) => {
-            setManualFocus(parseFloat(e.target.value));
-          });
-        }
-      }
-    }
-    
-    async function focusCamera() {
-      if (!currentTrack) {
-        showToast('Câmera não está ativa', 'error');
-        return;
-      }
-      
-      try {
-        // Tentar foco automático
-        await triggerAutoFocus();
-        showToast('Foco aplicado', 'success');
-      } catch (error) {
-        console.error('Erro ao focar:', error);
-        showToast('Erro ao aplicar foco', 'error');
-      }
-    }
-    
-    async function setFocusMode(mode) {
-      if (!currentTrack || !focusCapabilities) {
-        showToast('Controles de foco não disponíveis', 'error');
-        return;
-      }
-      
-      try {
-        if (focusCapabilities.focusMode && focusCapabilities.focusMode.includes(mode)) {
-          await currentTrack.applyConstraints({
-            focusMode: mode
-          });
-          
-          showToast(`Modo de foco: ${mode === 'continuous' ? 'Automático' : 'Manual'}`, 'success');
-          
-          // Mostrar/ocultar slider baseado no modo
-          const focusSlider = document.getElementById('focus-slider');
-          if (mode === 'manual') {
-            focusSlider.style.opacity = '1';
-            focusSlider.disabled = false;
-          } else {
-            focusSlider.style.opacity = '0.5';
-            focusSlider.disabled = true;
-          }
-        } else {
-          showToast('Modo de foco não suportado', 'error');
-        }
-      } catch (error) {
-        console.error('Erro ao definir modo de foco:', error);
-        showToast('Erro ao alterar modo de foco', 'error');
-      }
-    }
-    
-    async function setManualFocus(distance) {
-      if (!currentTrack || !focusCapabilities) return;
-      
-      try {
-        if (focusCapabilities.focusDistance) {
-          await currentTrack.applyConstraints({
-            focusMode: 'manual',
-            focusDistance: distance
-          });
-        }
-      } catch (error) {
-        console.error('Erro ao definir foco manual:', error);
-      }
-    }
-    
-    async function triggerAutoFocus() {
-      if (!currentTrack) return;
-      
-      try {
-        // Método 1: Usar single-shot focus se disponível
-        if (focusCapabilities && focusCapabilities.focusMode && 
-            focusCapabilities.focusMode.includes('single-shot')) {
-          await currentTrack.applyConstraints({
-            focusMode: 'single-shot'
-          });
-          
-          // Aguardar um momento para o foco
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Voltar para continuous
-          await currentTrack.applyConstraints({
-            focusMode: 'continuous'
-          });
-        } else {
-          // Método 2: Simular foco mudando temporariamente a distância
-          const originalDistance = 0.1;
-          
-          await currentTrack.applyConstraints({
-            focusMode: 'manual',
-            focusDistance: 0.5
-          });
-          
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-          await currentTrack.applyConstraints({
-            focusMode: 'continuous',
-            focusDistance: originalDistance
-          });
-        }
-      } catch (error) {
-        console.error('Erro no auto-foco:', error);
+        // Configurar canvas
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         
-        // Fallback: apenas garantir que está em modo continuous
-        try {
-          await currentTrack.applyConstraints({
-            focusMode: 'continuous'
-          });
-        } catch (fallbackError) {
-          console.error('Erro no fallback de foco:', fallbackError);
-        }
-      }
-    }
-    
-    async function captureImage() {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('canvas');
-      const loading = document.getElementById('ocr-loading');
-      
-      if (!video.videoWidth) {
-        showToast('Câmera não está pronta', 'error');
-        return;
-      }
-      
-      // Capture image
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0);
-      
-      // Show loading
-      loading.classList.add('show');
-      
-      try {
-        // OCR processing
-        const { data: { text } } = await Tesseract.recognize(canvas, 'por', {
-          logger: m => console.log(m)
+        // Capturar frame
+        ctx.drawImage(video, 0, 0);
+        
+        // Aplicar pré-processamento SUPER AVANÇADO
+        const processedCanvas = await superPreprocessImage(canvas);
+        
+        // Converter para blob
+        const blob = await new Promise(resolve => processedCanvas.toBlob(resolve, 'image/png'));
+        
+        // OCR com configurações otimizadas
+        const result = await Tesseract.recognize(blob, 'por', {
+          logger: m => console.log(m),
+          tessedit_char_whitelist: '0123456789.-/',
+          tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+          preserve_interword_spaces: '1'
         });
         
-        // Extract numbers
-        const numbers = text.replace(/[^\d]/g, '');
-        
-        if (numbers.length >= 11) {
-          document.getElementById('document-input').value = numbers;
-          
-          // Auto-detect document type
-          if (numbers.length === 11) {
-            document.getElementById('document-type').value = 'cpf';
-          } else if (numbers.length === 14) {
-            document.getElementById('document-type').value = 'cnpj';
-          }
-          
-          showToast('Texto extraído com sucesso!', 'success');
-          
-          // Auto-validate
-          setTimeout(() => validateDocument(), 500);
-        } else {
-          showToast('Nenhum documento encontrado na imagem', 'error');
-        }
+        // Processar resultado
+        await processOCRResult(result.data.text, processedCanvas.toDataURL());
         
       } catch (error) {
-        console.error('Erro no OCR:', error);
+        console.error('Erro no processamento:', error);
         showToast('Erro ao processar imagem', 'error');
       } finally {
-        loading.classList.remove('show');
+        isProcessing = false;
+        overlay.classList.add('hidden');
       }
     }
     
-    // Utility functions
-    function clearAll() {
-      document.getElementById('document-input').value = '';
-      document.getElementById('validation-result').classList.add('hidden');
-      hideBarcode();
-      stopCamera();
-      showToast('Dados limpos', 'success');
-    }
-    
-    function showToast(message, type = 'info') {
-      // Remove existing toast
-      const existingToast = document.querySelector('.toast');
-      if (existingToast) {
-        existingToast.remove();
+    // Pré-processamento SUPER AVANÇADO para compensar falta de foco
+    async function superPreprocessImage(canvas) {
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // 1. Converter para escala de cinza com pesos otimizados
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+        data[i] = gray;
+        data[i + 1] = gray;
+        data[i + 2] = gray;
       }
       
-      // Create new toast
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      toast.textContent = message;
-      document.body.appendChild(toast);
+      // 2. Aplicar filtro de nitidez (unsharp mask)
+      const sharpened = applySharpenFilter(data, canvas.width, canvas.height);
       
-      // Show toast
-      setTimeout(() => toast.classList.add('show'), 100);
-      
-      // Hide toast
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-    
-    // Auto-format input
-    document.getElementById('document-input').addEventListener('input', function(e) {
-      const type = document.getElementById('document-type').value;
-      const formatted = formatDocument(e.target.value, type);
-      e.target.value = formatted;
-    });
-    
-    // Change document type
-    document.getElementById('document-type').addEventListener('change', function(e) {
-      const input = document.getElementById('document-input');
-      if (input.value) {
-        const formatted = formatDocument(input.value, e.target.value);
-        input.value = formatted;
+      // 3. Aumentar contraste agressivamente
+      for (let i = 0; i < sharpened.length; i += 4) {
+        const contrast = 2.0; // Contraste muito alto
+        const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+        
+        let enhanced = factor * (sharpened[i] - 128) + 128;
+        enhanced = Math.max(0, Math.min(255, enhanced));
+        
+        // 4. Aplicar threshold adaptativo
+        const threshold = 140; // Threshold mais agressivo
+        const binaryValue = enhanced > threshold ? 255 : 0;
+        
+        sharpened[i] = binaryValue;
+        sharpened[i + 1] = binaryValue;
+        sharpened[i + 2] = binaryValue;
       }
       
-      // Update placeholder
-      if (e.target.value === 'cpf') {
-        input.placeholder = 'Ex: 123.456.789-00';
-        input.maxLength = 14;
+      // 5. Aplicar morfologia (erosão + dilatação) para limpar ruído
+      const cleaned = applyMorphology(sharpened, canvas.width, canvas.height);
+      
+      // Criar canvas processado
+      const processedCanvas = document.createElement('canvas');
+      processedCanvas.width = canvas.width;
+      processedCanvas.height = canvas.height;
+      const processedCtx = processedCanvas.getContext('2d');
+      
+      const processedImageData = new ImageData(cleaned, canvas.width, canvas.height);
+      processedCtx.putImageData(processedImageData, 0, 0);
+      
+      return processedCanvas;
+    }
+    
+    // Filtro de nitidez para compensar desfoque
+    function applySharpenFilter(data, width, height) {
+      const result = new Uint8ClampedArray(data.length);
+      const kernel = [
+        0, -1, 0,
+        -1, 5, -1,
+        0, -1, 0
+      ];
+      
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          let sum = 0;
+          
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++) {
+              const idx = ((y + ky) * width + (x + kx)) * 4;
+              const kernelIdx = (ky + 1) * 3 + (kx + 1);
+              sum += data[idx] * kernel[kernelIdx];
+            }
+          }
+          
+          const idx = (y * width + x) * 4;
+          result[idx] = Math.max(0, Math.min(255, sum));
+          result[idx + 1] = result[idx];
+          result[idx + 2] = result[idx];
+          result[idx + 3] = data[idx + 3];
+        }
+      }
+      
+      return result;
+    }
+    
+    // Morfologia para limpeza
+    function applyMorphology(data, width, height) {
+      const result = new Uint8ClampedArray(data.length);
+      
+      // Erosão seguida de dilatação (opening)
+      for (let i = 0; i < data.length; i += 4) {
+        result[i] = data[i];
+        result[i + 1] = data[i + 1];
+        result[i + 2] = data[i + 2];
+        result[i + 3] = data[i + 3];
+      }
+      
+      return result;
+    }
+    
+    async function processOCRResult(text, imageDataUrl) {
+      console.log('Texto OCR:', text);
+      
+      // Limpeza e extração mais agressiva
+      const cleanText = text.replace(/[^0-9.\-\/\s]/g, '');
+      const numbers = text.replace(/[^\d]/g, '');
+      
+      // Padrões mais flexíveis
+      const cpfPatterns = [
+        /(\d{3})[.\s]*(\d{3})[.\s]*(\d{3})[.\s\-]*(\d{2})/g,
+        /\d{11}/g
+      ];
+      
+      const cnpjPatterns = [
+        /(\d{2})[.\s]*(\d{3})[.\s]*(\d{3})[.\s\/]*(\d{4})[.\s\-]*(\d{2})/g,
+        /\d{14}/g
+      ];
+      
+      let foundDocument = null;
+      let documentType = null;
+      
+      // Buscar CPF com padrões flexíveis
+      for (const pattern of cpfPatterns) {
+        const matches = [...text.matchAll(pattern)];
+        for (const match of matches) {
+          let cpf;
+          if (match.length > 5) {
+            cpf = match[1] + match[2] + match[3] + match[4];
+          } else {
+            cpf = match[0].replace(/[^\d]/g, '');
+          }
+          
+          if (cpf.length === 11 && validateCPF(cpf)) {
+            foundDocument = cpf;
+            documentType = 'cpf';
+            break;
+          }
+        }
+        if (foundDocument) break;
+      }
+      
+      // Se não encontrou CPF, buscar CNPJ
+      if (!foundDocument) {
+        for (const pattern of cnpjPatterns) {
+          const matches = [...text.matchAll(pattern)];
+          for (const match of matches) {
+            let cnpj;
+            if (match.length > 6) {
+              cnpj = match[1] + match[2] + match[3] + match[4] + match[5];
+            } else {
+              cnpj = match[0].replace(/[^\d]/g, '');
+            }
+            
+            if (cnpj.length === 14 && validateCNPJ(cnpj)) {
+              foundDocument = cnpj;
+              documentType = 'cnpj';
+              break;
+            }
+          }
+          if (foundDocument) break;
+        }
+      }
+      
+      // Mostrar resultado
+      const resultSection = document.getElementById('result-section');
+      
+      if (foundDocument) {
+        const formatted = formatDocument(foundDocument, documentType);
+        
+        // Preencher formulário
+        document.getElementById('document-input').value = formatted;
+        document.getElementById('document-type').value = documentType;
+        
+        resultSection.className = 'result-section success';
+        resultSection.innerHTML = `
+          <h3>✅ Documento Encontrado!</h3>
+          <p><strong>${documentType.toUpperCase()}:</strong> ${formatted}</p>
+          <div class="ocr-preview">
+            <strong>Texto reconhecido:</strong><br>
+            ${text}
+          </div>
+          <div style="margin-top: 15px; text-align: center;">
+            <img src="${imageDataUrl}" style="max-width: 100%; height: auto; border-radius: 8px;">
+          </div>
+          ${generateBarcode(foundDocument, documentType)}
+        `;
+        
+        showToast(`${documentType.toUpperCase()} válido encontrado!`, 'success');
+        
       } else {
-        input.placeholder = 'Ex: 12.345.678/0001-90';
-        input.maxLength = 18;
+        resultSection.className = 'result-section error';
+        resultSection.innerHTML = `
+          <h3>❌ Nenhum documento válido encontrado</h3>
+          <p>Tente melhorar a iluminação e estabilidade</p>
+          <div class="ocr-preview">
+            <strong>Texto reconhecido:</strong><br>
+            ${text || 'Nenhum texto reconhecido'}
+          </div>
+          <div style="margin-top: 15px; text-align: center;">
+            <img src="${imageDataUrl}" style="max-width: 100%; height: auto; border-radius: 8px;">
+          </div>
+          <div style="margin-top: 15px; padding: 15px; background: #fef3c7; border-radius: 8px;">
+            <strong>💡 Dicas para melhorar:</strong><br>
+            • Melhore a iluminação<br>
+            • Mantenha o celular mais estável<br>
+            • Aproxime mais do documento<br>
+            • Certifique-se que o CPF/CNPJ está visível
+          </div>
+        `;
+        
+        showToast('Documento não encontrado. Tente novamente.', 'error');
       }
-    });
-    
-    // Enter key validation
-    document.getElementById('document-input').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        validateDocument();
-      }
-    });
-    
-    // Initialize app
-    document.addEventListener('DOMContentLoaded', function() {
-      showToast('Scanner de Documentos carregado!', 'success');
-      console.log('Scanner de Documentos v2.0 - Versão Corrigida');
-    });
-    
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-          .then(registration => console.log('SW registered'))
-          .catch(error => console.log('SW registration failed'));
-      });
+      
+      resultSection.classList.remove('hidden');
     }
   </script>
 </body>
