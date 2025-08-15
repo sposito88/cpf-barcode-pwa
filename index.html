@@ -36,12 +36,36 @@
     .progress{height:10px;background:#0f1a35;border-radius:999px;overflow:hidden;border:1px solid #203158}
     .progress>i{display:block;height:100%;background:linear-gradient(90deg,#1f8ffd,#22d3ee);width:0}
     .hint{font-size:12px;opacity:.85}
+    
+    /* Melhorias para PWA */
+    .install-prompt{position:fixed;top:16px;right:16px;background:var(--card);border:1px solid #263157;border-radius:12px;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:1000;max-width:300px;display:none}
+    .install-prompt.show{display:block}
+    .install-prompt button{margin-top:8px;width:100%}
+    .install-prompt .close{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--txt);font-size:18px;cursor:pointer;padding:4px}
+    
+    /* Melhorias para câmera */
+    .camera-container{position:relative}
+    .focus-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:80px;border:2px solid var(--accent);border-radius:8px;pointer-events:none;opacity:0.7;display:none}
+    .focus-indicator.active{display:block}
+    
+    /* Melhorias para feedback */
+    .status-message{background:var(--card);border-radius:8px;padding:8px 12px;margin-top:8px;border-left:3px solid var(--accent)}
+    .status-message.error{border-left-color:var(--bad)}
+    .status-message.success{border-left-color:var(--ok)}
   </style>
   <!-- libs via CDN -->
   <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
+  <!-- Prompt de instalação PWA -->
+  <div id="installPrompt" class="install-prompt">
+    <button class="close" onclick="hideInstallPrompt()">×</button>
+    <div>📱 Instalar app no dispositivo?</div>
+    <button id="installBtn" class="primary">Instalar</button>
+    <button onclick="hideInstallPrompt()" class="ghost">Agora não</button>
+  </div>
+
   <div class="wrap">
     <div class="title">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4H4a1 1 0 0 0-1 1v3M17 4h3a1 1 0 0 1 1 1v3M7 20H4a1 1 0 0 1-1-1v-3M17 20h3a1 1 0 0 0 1-1v-3" stroke="#6ee7ff" stroke-width="1.5" stroke-linecap="round"/><rect x="6" y="7" width="12" height="10" rx="2" stroke="#6ee7ff" stroke-width="1.5"/></svg>
@@ -57,12 +81,16 @@
           <button id="btnStop" class="ghost" disabled>⏹️ Desligar câmera</button>
         </div>
         <div class="hint">Dica: aponte para um documento ou texto que contenha o CPF. Boa luz ajuda o OCR.</div>
-        <video id="video" playsinline muted></video>
+        <div class="camera-container">
+          <video id="video" playsinline muted></video>
+          <div id="focusIndicator" class="focus-indicator"></div>
+        </div>
         <canvas id="frame"></canvas>
         <div class="row" style="margin-top:8px">
           <div class="progress" style="flex:1"><i id="pbar"></i></div>
           <span id="status" class="badge muted">Aguardando…</span>
         </div>
+        <div id="statusMessage" class="status-message" style="display:none"></div>
       </div>
 
       <!-- Lado direito: resultado, validação e barcode -->
@@ -97,6 +125,33 @@
   </div>
 
 <script>
+  // ==== PWA Install Prompt ====
+  let deferredPrompt;
+  const installPrompt = document.getElementById('installPrompt');
+  const installBtn = document.getElementById('installBtn');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installPrompt.classList.add('show');
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('PWA instalado com sucesso');
+      }
+      deferredPrompt = null;
+      hideInstallPrompt();
+    }
+  });
+
+  function hideInstallPrompt() {
+    installPrompt.classList.remove('show');
+  }
+
   // ==== Utilidades CPF ====
   function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
   function formatCPF(d){ d = onlyDigits(d).slice(0,11); if(d.length<11) return d; return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
@@ -113,7 +168,7 @@
     return d1 === parseInt(n[9],10) && d2 === parseInt(n[10],10);
   }
 
-  // ==== Câmera ====
+  // ==== Câmera com foco automático ====
   const video = document.getElementById('video');
   const canvas = document.getElementById('frame');
   const btnStart = document.getElementById('btnStart');
@@ -121,65 +176,230 @@
   const btnStop  = document.getElementById('btnStop');
   const statusEl = document.getElementById('status');
   const pbar     = document.getElementById('pbar');
+  const focusIndicator = document.getElementById('focusIndicator');
+  const statusMessage = document.getElementById('statusMessage');
 
   let stream;
   async function startCamera(){
     try{
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio:false });
-      video.srcObject = stream; await video.play();
-      btnShot.disabled = false; btnStop.disabled = false; btnStart.disabled = true;
+      // Configuração melhorada da câmera com foco automático
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          focusMode: { ideal: 'continuous' },
+          exposureMode: { ideal: 'continuous' },
+          whiteBalanceMode: { ideal: 'continuous' }
+        },
+        audio: false
+      };
+
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+      
+      // Aguarda o vídeo carregar
+      await new Promise((resolve) => {
+        video.onloadedmetadata = resolve;
+      });
+      
+      await video.play();
+      
+      // Mostra indicador de foco
+      focusIndicator.classList.add('active');
+      
+      btnShot.disabled = false;
+      btnStop.disabled = false;
+      btnStart.disabled = true;
+      
       setStatus('Câmera ligada. Aponte para o CPF e toque em "Capturar & Ler"');
-    }catch(e){ alert('Não foi possível acessar a câmera: '+ e.message); }
+      showStatusMessage('Câmera ativada com foco automático. Posicione o documento na área destacada.', 'success');
+      
+      // Auto-foco quando o usuário toca na tela
+      video.addEventListener('click', () => {
+        if (stream && stream.getVideoTracks().length > 0) {
+          const track = stream.getVideoTracks()[0];
+          if (track.getCapabilities && track.getCapabilities().focusMode) {
+            track.applyConstraints({
+              advanced: [{ focusMode: 'manual', focusDistance: 0 }]
+            }).then(() => {
+              setTimeout(() => {
+                track.applyConstraints({
+                  advanced: [{ focusMode: 'continuous' }]
+                });
+              }, 100);
+            }).catch(console.error);
+          }
+        }
+      });
+      
+    }catch(e){
+      console.error('Erro na câmera:', e);
+      showStatusMessage('Erro ao acessar câmera: ' + e.message, 'error');
+      alert('Não foi possível acessar a câmera: '+ e.message);
+    }
   }
-  function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); } btnStart.disabled=false; btnShot.disabled=true; btnStop.disabled=true; setStatus('Câmera desligada'); }
+  
+  function stopCamera(){
+    if(stream){
+      stream.getTracks().forEach(t => t.stop());
+    }
+    focusIndicator.classList.remove('active');
+    btnStart.disabled = false;
+    btnShot.disabled = true;
+    btnStop.disabled = true;
+    setStatus('Câmera desligada');
+    hideStatusMessage();
+  }
 
-  btnStart.onclick = startCamera; btnStop.onclick = stopCamera;
+  btnStart.onclick = startCamera;
+  btnStop.onclick = stopCamera;
 
-  // ==== OCR com Tesseract (API estável) ====
+  // ==== OCR melhorado com Tesseract ====
   async function grabAndOcr(){
     if(!video.srcObject) return;
-    const w = video.videoWidth, h = video.videoHeight; canvas.width=w; canvas.height=h;
+    
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    canvas.width = w;
+    canvas.height = h;
+    
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, w, h);
+    
+    // Melhora a imagem antes do OCR
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    
+    // Aplica filtros para melhorar o reconhecimento
+    for (let i = 0; i < data.length; i += 4) {
+      const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      const threshold = 128;
+      const binary = gray > threshold ? 255 : 0;
+      data[i] = data[i + 1] = data[i + 2] = binary;
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
     const dataUrl = canvas.toDataURL('image/png');
 
-    setStatus('Lendo imagem…'); setProgress(5);
-    const worker = await Tesseract.createWorker({
-      logger: m => { if(m.status && m.progress!=null){ setStatus(m.status); setProgress(Math.round(m.progress*100)); } }
-    });
-    await worker.load();
-    await worker.loadLanguage('por');
-    await worker.initialize('por');
-    const { data:{ text } } = await worker.recognize(dataUrl);
-    await worker.terminate();
+    setStatus('Lendo imagem…');
+    setProgress(5);
+    showStatusMessage('Processando imagem com OCR...', 'success');
+    
+    try {
+      const worker = await Tesseract.createWorker({
+        logger: m => {
+          if(m.status && m.progress != null){
+            setStatus(m.status);
+            setProgress(Math.round(m.progress * 100));
+          }
+        }
+      });
+      
+      await worker.load();
+      await worker.loadLanguage('por');
+      await worker.initialize('por');
+      
+      // Configurações específicas para melhorar reconhecimento de números
+      await worker.setParameters({
+        tessedit_char_whitelist: '0123456789.-',
+        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+        preserve_interword_spaces: '1'
+      });
+      
+      const { data: { text } } = await worker.recognize(dataUrl);
+      await worker.terminate();
 
-    const candidates = extractCpfCandidates(text);
-    if(candidates.length){
-      const validFirst = candidates.sort((a,b)=> (cpfCheckDigits(b)?1:0) - (cpfCheckDigits(a)?1:0));
-      const picked = validFirst[0];
-      setCPF(picked);
-      setStatus('CPF detectado. Revise e gere o código.');
-    } else {
-      setStatus('Não encontrei um CPF claro. Tente aproximar, melhorar a luz ou digitar manualmente.');
+      const candidates = extractCpfCandidates(text);
+      
+      if(candidates.length > 0){
+        // Prioriza CPFs válidos
+        const validFirst = candidates.sort((a,b) => {
+          const aValid = cpfCheckDigits(a);
+          const bValid = cpfCheckDigits(b);
+          if (aValid && !bValid) return -1;
+          if (!aValid && bValid) return 1;
+          return 0;
+        });
+        
+        const picked = validFirst[0];
+        setCPF(picked);
+        
+        if (cpfCheckDigits(picked)) {
+          setStatus('CPF válido detectado! Revise e gere o código.');
+          showStatusMessage('CPF válido encontrado: ' + formatCPF(picked), 'success');
+        } else {
+          setStatus('CPF detectado (pode precisar de correção).');
+          showStatusMessage('CPF detectado, mas verifique se está correto: ' + formatCPF(picked), 'error');
+        }
+      } else {
+        setStatus('Não encontrei um CPF claro. Tente aproximar, melhorar a luz ou digitar manualmente.');
+        showStatusMessage('Nenhum CPF encontrado na imagem. Tente melhorar o foco ou a iluminação.', 'error');
+      }
+      
+    } catch (error) {
+      console.error('Erro no OCR:', error);
+      setStatus('Erro ao processar imagem');
+      showStatusMessage('Erro no processamento OCR: ' + error.message, 'error');
     }
+    
     setProgress(0);
   }
 
   function extractCpfCandidates(text){
-    const raw = (text||'').replace(/[O\-]/g, m=> m==='O'?'0':''); // troca O por 0
-    const digits = raw.match(/\d/g)?.join('') || '';
-    const list = new Set();
-    for(let i=0;i+11<=digits.length;i++){
-      const seq = digits.slice(i,i+11);
-      if(seq.length===11) list.add(seq);
+    console.log('Texto extraído:', text);
+    
+    // Limpa o texto
+    const cleanText = (text || '').replace(/[Oo]/g, '0').replace(/[lI]/g, '1');
+    
+    // Padrões para CPF
+    const patterns = [
+      // CPF com formatação: 123.456.789-01
+      /\b\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}\b/g,
+      // CPF sem formatação: 12345678901
+      /\b\d{11}\b/g,
+      // CPF parcial com formatação
+      /\b\d{3}[\.\s]?\d{3}[\.\s]?\d{3}\b/g
+    ];
+    
+    const candidates = new Set();
+    
+    patterns.forEach(pattern => {
+      const matches = cleanText.match(pattern) || [];
+      matches.forEach(match => {
+        const digits = onlyDigits(match);
+        if (digits.length === 11) {
+          candidates.add(digits);
+        }
+      });
+    });
+    
+    // Busca por sequências de 11 dígitos consecutivos
+    const allDigits = cleanText.match(/\d/g)?.join('') || '';
+    for (let i = 0; i + 11 <= allDigits.length; i++) {
+      const seq = allDigits.slice(i, i + 11);
+      if (seq.length === 11) {
+        candidates.add(seq);
+      }
     }
-    const fmt = raw.match(/\b\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}\b/g) || [];
-    fmt.forEach(f=> list.add(onlyDigits(f)));
-    return Array.from(list).filter(s=> s.length===11);
+    
+    const result = Array.from(candidates).filter(s => s.length === 11);
+    console.log('Candidatos encontrados:', result);
+    return result;
   }
 
   function setStatus(msg){ statusEl.textContent = msg; }
   function setProgress(v){ pbar.style.width = Math.max(0, Math.min(100, v)) + '%'; }
+  
+  function showStatusMessage(message, type = 'success') {
+    statusMessage.textContent = message;
+    statusMessage.className = `status-message ${type}`;
+    statusMessage.style.display = 'block';
+  }
+  
+  function hideStatusMessage() {
+    statusMessage.style.display = 'none';
+  }
 
   const btnOcr = document.getElementById('btnShot');
   btnOcr.onclick = grabAndOcr;
@@ -191,24 +411,54 @@
   const symSel = document.getElementById('symbology');
 
   function setCPF(v){ cpfInput.value = formatCPF(v); }
-  cpfInput.addEventListener('input', ()=> { cpfInput.value = formatCPF(cpfInput.value); badge.className='badge muted'; badge.textContent='CPF não verificado'; });
+  cpfInput.addEventListener('input', ()=> { 
+    cpfInput.value = formatCPF(cpfInput.value); 
+    badge.className='badge muted'; 
+    badge.textContent='CPF não verificado'; 
+  });
 
   function markValid(ok){
-    if(ok){ badge.className='badge ok'; badge.textContent='CPF válido'; }
-    else { badge.className='badge bad'; badge.textContent='CPF inválido'; }
+    if(ok){ 
+      badge.className='badge ok'; 
+      badge.textContent='CPF válido'; 
+    } else { 
+      badge.className='badge bad'; 
+      badge.textContent='CPF inválido'; 
+    }
   }
 
   function generateBarcode(){
     const val = onlyDigits(cpfInput.value);
     const type = symSel.value;
-    if(!val || val.length!==11){ markValid(false); alert('Informe um CPF com 11 dígitos.'); return; }
+    
+    if(!val || val.length !== 11){
+      markValid(false);
+      showStatusMessage('Informe um CPF com 11 dígitos.', 'error');
+      return;
+    }
+    
     const ok = cpfCheckDigits(val);
     markValid(ok);
-    if(!ok){ alert('CPF inválido pelo cálculo dos dígitos verificadores. Corrija antes de gerar.'); return; }
+    
+    if(!ok){
+      showStatusMessage('CPF inválido pelo cálculo dos dígitos verificadores. Corrija antes de gerar.', 'error');
+      return;
+    }
+    
     try{
-      JsBarcode('#barcode', val, { format: type, displayValue:true, fontSize:16, margin:10 });
+      JsBarcode('#barcode', val, { 
+        format: type, 
+        displayValue: true, 
+        fontSize: 16, 
+        margin: 10,
+        background: '#ffffff',
+        lineColor: '#000000'
+      });
       document.getElementById('btnDownload').disabled = false;
-    }catch(e){ alert('Erro ao gerar código: ' + e.message); }
+      showStatusMessage('Código de barras gerado com sucesso!', 'success');
+    }catch(e){
+      showStatusMessage('Erro ao gerar código: ' + e.message, 'error');
+    }
   }
 
   btnValidate.onclick = generateBarcode;
@@ -222,12 +472,16 @@
     const img = new Image();
     img.onload = () => {
       const c = document.createElement('canvas');
-      c.width = img.width; c.height = img.height;
-      c.getContext('2d').drawImage(img, 0, 0);
+      c.width = img.width * 2; // Aumenta a resolução
+      c.height = img.height * 2;
+      const ctx = c.getContext('2d');
+      ctx.scale(2, 2); // Escala para melhor qualidade
+      ctx.drawImage(img, 0, 0);
       const link = document.createElement('a');
       link.download = `barcode_cpf_${onlyDigits(cpfInput.value)}.png`;
       link.href = c.toDataURL('image/png');
       link.click();
+      showStatusMessage('Código de barras baixado com sucesso!', 'success');
     };
     img.src = svg64;
   };
@@ -235,7 +489,13 @@
   // ==== Service Worker registration ====
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(console.error);
+      navigator.serviceWorker.register('./sw.js')
+        .then(registration => {
+          console.log('SW registrado:', registration);
+        })
+        .catch(error => {
+          console.error('Erro no SW:', error);
+        });
     });
   }
 </script>
