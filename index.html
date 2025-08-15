@@ -1,487 +1,665 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Scanner de Documentos - CPF & Códigos de Barras</title>
-  <meta name="description" content="Escaneie documentos, extraia CPF e gere códigos de barras de forma rápida e segura. Tudo processado localmente no seu dispositivo.">
-  <meta name="theme-color" content="#0f172a">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./src/assets/icons/icon-192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scanner de Documentos - CPF & CNPJ</title>
+  <meta name="description" content="Escaneie documentos, extraia CPF/CNPJ e gere códigos de barras de forma rápida e segura.">
+  <meta name="theme-color" content="#1e40af">
   
-  <!-- Preload critical resources -->
-  <link rel="preload" href="./src/css/base/variables.css" as="style">
-  <link rel="preload" href="./src/css/base/reset.css" as="style">
-  <link rel="preload" href="./src/css/base/typography.css" as="style">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
   
-  <!-- CSS -->
-  <link rel="stylesheet" href="./src/css/base/variables.css">
-  <link rel="stylesheet" href="./src/css/base/reset.css">
-  <link rel="stylesheet" href="./src/css/base/typography.css">
-  <link rel="stylesheet" href="./src/css/components/layout.css">
-  <link rel="stylesheet" href="./src/css/components/buttons.css">
-  <link rel="stylesheet" href="./src/css/components/cards.css">
-  <link rel="stylesheet" href="./src/css/components/forms.css">
-  <link rel="stylesheet" href="./src/css/components/modals.css">
-  <link rel="stylesheet" href="./src/css/components/animations.css">
-  <link rel="stylesheet" href="./src/css/themes/dark.css">
-  
-  <!-- External libraries (loaded on demand) -->
-  <script>
-    window.LIBS_LOADED = {
-      tesseract: false,
-      jsbarcode: false
-    };
-  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s ease;
+    }
+    
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .btn {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 5px;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4);
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+    }
+    
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+    
+    .validation-result {
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .validation-result.valid {
+      background: #d1fae5;
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+    
+    .validation-result.invalid {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+    
+    .validation-result.pending {
+      background: #fef3c7;
+      color: #92400e;
+      border: 2px solid #f59e0b;
+    }
+    
+    .camera-section {
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    #video {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    #canvas {
+      display: none;
+    }
+    
+    .barcode-result {
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    #barcode {
+      max-width: 100%;
+      height: auto;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 10px;
+      background: white;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    .loading.show {
+      display: block;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f4f6;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1f2937;
+      color: white;
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      z-index: 1000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+    
+    .toast.success {
+      background: #10b981;
+    }
+    
+    .toast.error {
+      background: #ef4444;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+    }
+  </style>
 </head>
-<body class="theme-dark">
-  <!-- Loading Screen -->
-  <div id="loading-screen" class="loading-screen">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
-      <h2>Carregando Scanner de Documentos</h2>
-      <p>Preparando as ferramentas de OCR...</p>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📱 Scanner de Documentos</h1>
+      <p>Escaneie CPF/CNPJ e gere códigos de barras</p>
     </div>
-  </div>
-
-  <!-- Main App -->
-  <div id="app" class="app hidden">
-    <!-- Header -->
-    <header class="header">
-      <div class="container">
-        <div class="header-content">
-          <div class="logo">
-            <svg class="logo-icon" viewBox="0 0 24 24" fill="none">
-              <path d="M7 4H4a1 1 0 0 0-1 1v3M17 4h3a1 1 0 0 1 1 1v3M7 20H4a1 1 0 0 1-1-1v-3M17 20h3a1 1 0 0 0 1-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              <rect x="6" y="7" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-            <div class="logo-text">
-              <h1>Scanner de Documentos</h1>
-              <span>CPF & Códigos de Barras</span>
-            </div>
-          </div>
-          
-          <div class="header-actions">
-            <button id="theme-toggle" class="btn-icon" title="Alternar tema">
-              <svg class="icon-sun" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2"/>
-              </svg>
-              <svg class="icon-moon hidden" viewBox="0 0 24 24" fill="none">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </button>
-            
-            <button id="settings-btn" class="btn-icon" title="Configurações">
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 1v6M12 17v6M5.64 5.64l4.24 4.24M14.12 14.12l4.24 4.24M1 12h6M17 12h6M5.64 18.36l4.24-4.24M14.12 9.88l4.24-4.24" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </button>
-            
-            <button id="history-btn" class="btn-icon" title="Histórico">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2"/>
-                <path d="M3 3v5h5M12 7v5l4 2" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+    
+    <div class="card">
+      <div class="input-group">
+        <label for="document-input">Digite ou escaneie o documento:</label>
+        <input type="text" id="document-input" placeholder="Ex: 123.456.789-00" maxlength="18">
       </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="main">
-      <div class="container">
-        <!-- Quick Actions -->
-        <section class="quick-actions">
-          <div class="quick-action-grid">
-            <button id="scan-cpf" class="quick-action-card active">
-              <div class="quick-action-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
-                  <path d="M7 8h10M7 12h6" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </div>
-              <div class="quick-action-content">
-                <h3>Escanear CPF</h3>
-                <p>Extrair CPF de documentos</p>
-              </div>
-            </button>
-            
-            <button id="scan-cnpj" class="quick-action-card">
-              <div class="quick-action-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </div>
-              <div class="quick-action-content">
-                <h3>Escanear CNPJ</h3>
-                <p>Extrair CNPJ de documentos</p>
-              </div>
-            </button>
-            
-            <button id="manual-input" class="quick-action-card">
-              <div class="quick-action-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2"/>
-                  <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </div>
-              <div class="quick-action-content">
-                <h3>Entrada Manual</h3>
-                <p>Digitar documento manualmente</p>
-              </div>
-            </button>
-          </div>
-        </section>
-
-        <!-- Scanner Section -->
-        <section id="scanner-section" class="scanner-section">
-          <div class="scanner-grid">
-            <!-- Camera Panel -->
-            <div class="scanner-panel">
-              <div class="panel-header">
-                <h2>Câmera & Scanner</h2>
-                <div class="panel-actions">
-                  <button id="camera-flip" class="btn-icon" title="Alternar câmera" disabled>
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M17 8l4-4m0 0l-4-4m4 4H7a4 4 0 0 0-4 4v4" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                  </button>
-                  <button id="flash-toggle" class="btn-icon" title="Flash" disabled>
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              <div class="camera-container">
-                <video id="video" class="camera-video" playsinline muted></video>
-                <canvas id="canvas" class="camera-canvas"></canvas>
-                
-                <!-- Camera Overlay -->
-                <div class="camera-overlay">
-                  <div class="scan-frame">
-                    <div class="scan-corners">
-                      <div class="corner corner-tl"></div>
-                      <div class="corner corner-tr"></div>
-                      <div class="corner corner-bl"></div>
-                      <div class="corner corner-br"></div>
-                    </div>
-                    <div class="scan-line"></div>
-                  </div>
-                  
-                  <div class="camera-hint">
-                    <p>Posicione o documento dentro da moldura</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="camera-controls">
-                <button id="start-camera" class="btn btn-primary">
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2v11z" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Ligar Câmera
-                </button>
-                
-                <button id="capture-photo" class="btn btn-accent" disabled>
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                  </svg>
-                  Capturar & Processar
-                </button>
-                
-                <button id="stop-camera" class="btn btn-secondary" disabled>
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                    <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
-                  </svg>
-                  Parar
-                </button>
-              </div>
-              
-              <!-- Progress Bar -->
-              <div id="ocr-progress" class="progress-container hidden">
-                <div class="progress-bar">
-                  <div class="progress-fill"></div>
-                </div>
-                <div class="progress-text">
-                  <span id="progress-status">Processando...</span>
-                  <span id="progress-percent">0%</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Results Panel -->
-            <div class="results-panel">
-              <div class="panel-header">
-                <h2>Resultado & Validação</h2>
-                <div class="panel-actions">
-                  <button id="clear-results" class="btn-icon" title="Limpar resultados">
-                    <svg viewBox="0 0 24 24" fill="none">
-                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              
-              <div class="results-content">
-                <!-- Document Input -->
-                <div class="form-group">
-                  <label for="document-input">Documento Detectado</label>
-                  <div class="input-group">
-                    <input id="document-input" type="text" placeholder="___.___.___-__" class="form-input">
-                    <button id="format-document" class="btn-icon" title="Formatar documento">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </button>
-                  </div>
-                  <div id="validation-status" class="validation-status">
-                    <span class="status-badge status-pending">Aguardando validação</span>
-                  </div>
-                </div>
-                
-                <!-- Document Type -->
-                <div class="form-group">
-                  <label for="document-type">Tipo de Documento</label>
-                  <select id="document-type" class="form-select">
-                    <option value="cpf">CPF - Cadastro de Pessoa Física</option>
-                    <option value="cnpj">CNPJ - Cadastro Nacional de Pessoa Jurídica</option>
-                    <option value="custom">Personalizado</option>
-                  </select>
-                </div>
-                
-                <!-- Barcode Settings -->
-                <div class="form-group">
-                  <label for="barcode-format">Formato do Código de Barras</label>
-                  <select id="barcode-format" class="form-select">
-                    <option value="CODE128">CODE128 (Recomendado)</option>
-                    <option value="ITF">Interleaved 2 of 5</option>
-                    <option value="MSI">MSI</option>
-                    <option value="pharmacode">Pharmacode</option>
-                    <option value="codabar">Codabar</option>
-                  </select>
-                </div>
-                
-                <!-- Action Buttons -->
-                <div class="form-actions">
-                  <button id="validate-document" class="btn btn-primary">
-                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                      <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2"/>
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    Validar & Gerar
-                  </button>
-                  
-                  <button id="save-to-history" class="btn btn-secondary" disabled>
-                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="2"/>
-                      <polyline points="17,21 17,13 7,13 7,21" stroke="currentColor" stroke-width="2"/>
-                      <polyline points="7,3 7,8 15,8" stroke="currentColor" stroke-width="2"/>
-                    </svg>
-                    Salvar no Histórico
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Barcode Display Section -->
-        <section id="barcode-section" class="barcode-section hidden">
-          <div class="barcode-panel">
-            <div class="panel-header">
-              <h2>Código de Barras Gerado</h2>
-              <div class="panel-actions">
-                <button id="download-barcode" class="btn btn-accent" disabled>
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Baixar PNG
-                </button>
-                
-                <button id="download-svg" class="btn btn-secondary" disabled>
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Baixar SVG
-                </button>
-                
-                <button id="print-barcode" class="btn btn-secondary" disabled>
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-                    <polyline points="6,9 6,2 18,2 18,9" stroke="currentColor" stroke-width="2"/>
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="2"/>
-                    <rect x="6" y="14" width="12" height="8" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Imprimir
-                </button>
-              </div>
-            </div>
-            
-            <div class="barcode-display">
-              <div class="barcode-container">
-                <svg id="barcode-svg" class="barcode-svg"></svg>
-              </div>
-              
-              <div class="barcode-info">
-                <div class="info-item">
-                  <span class="info-label">Documento:</span>
-                  <span id="barcode-document" class="info-value">-</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Formato:</span>
-                  <span id="barcode-format-display" class="info-value">-</span>
-                </div>
-                <div class="info-item">
-                  <span class="info-label">Gerado em:</span>
-                  <span id="barcode-timestamp" class="info-value">-</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      
+      <div class="input-group">
+        <label for="document-type">Tipo de documento:</label>
+        <select id="document-type">
+          <option value="cpf">CPF</option>
+          <option value="cnpj">CNPJ</option>
+        </select>
       </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-info">
-            <p><strong>🔒 Privacidade Total:</strong> Todo o processamento ocorre localmente no seu dispositivo. Nenhum dado é enviado para servidores externos.</p>
-          </div>
-          <div class="footer-links">
-            <button id="about-btn" class="footer-link">Sobre</button>
-            <button id="help-btn" class="footer-link">Ajuda</button>
-            <button id="privacy-btn" class="footer-link">Privacidade</button>
-          </div>
-        </div>
+      
+      <div style="text-align: center;">
+        <button class="btn" onclick="validateDocument()">✅ Validar Documento</button>
+        <button class="btn btn-secondary" onclick="toggleCamera()">📷 Câmera</button>
+        <button class="btn btn-secondary" onclick="clearAll()">🗑️ Limpar</button>
       </div>
-    </footer>
-  </div>
-
-  <!-- Modals -->
-  <div id="settings-modal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Configurações</h2>
-        <button class="modal-close" data-modal="settings-modal">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
-          </svg>
-        </button>
+      
+      <div id="validation-result" class="validation-result hidden">
+        <span id="validation-text"></span>
       </div>
-      <div class="modal-body">
-        <div class="settings-section">
-          <h3>Aparência</h3>
-          <div class="setting-item">
-            <label for="theme-select">Tema</label>
-            <select id="theme-select" class="form-select">
-              <option value="dark">Escuro</option>
-              <option value="light">Claro</option>
-              <option value="auto">Automático</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="settings-section">
-          <h3>Câmera</h3>
-          <div class="setting-item">
-            <label for="camera-quality">Qualidade da Imagem</label>
-            <select id="camera-quality" class="form-select">
-              <option value="high">Alta (Melhor OCR)</option>
-              <option value="medium">Média (Balanceado)</option>
-              <option value="low">Baixa (Mais Rápido)</option>
-            </select>
-          </div>
-          <div class="setting-item">
-            <label>
-              <input type="checkbox" id="auto-capture" class="form-checkbox">
-              Captura Automática
-            </label>
-          </div>
-        </div>
-        
-        <div class="settings-section">
-          <h3>Processamento</h3>
-          <div class="setting-item">
-            <label for="ocr-language">Idioma do OCR</label>
-            <select id="ocr-language" class="form-select">
-              <option value="por">Português</option>
-              <option value="eng">Inglês</option>
-            </select>
-          </div>
-        </div>
+    </div>
+    
+    <div class="card camera-section hidden" id="camera-section">
+      <h3 style="text-align: center; margin-bottom: 20px;">📷 Scanner de Câmera</h3>
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas"></canvas>
+      <div style="text-align: center; margin-top: 15px;">
+        <button class="btn" onclick="captureImage()">📸 Capturar</button>
+        <button class="btn btn-danger" onclick="stopCamera()">❌ Fechar</button>
+      </div>
+      
+      <div class="loading" id="ocr-loading">
+        <div class="spinner"></div>
+        <p>Processando imagem...</p>
+      </div>
+    </div>
+    
+    <div class="card barcode-result hidden" id="barcode-section">
+      <h3 style="text-align: center; margin-bottom: 20px;">📊 Código de Barras</h3>
+      <div style="text-align: center;">
+        <svg id="barcode"></svg>
+      </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <button class="btn btn-success" onclick="downloadBarcode()">💾 Baixar</button>
       </div>
     </div>
   </div>
-
-  <div id="history-modal" class="modal">
-    <div class="modal-content modal-large">
-      <div class="modal-header">
-        <h2>Histórico de Documentos</h2>
-        <button class="modal-close" data-modal="history-modal">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
-          </svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="history-controls">
-          <div class="search-box">
-            <input id="history-search" type="text" placeholder="Buscar no histórico..." class="form-input">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
-              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
-            </svg>
-          </div>
-          <button id="clear-history" class="btn btn-danger">
-            <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
-              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
-            </svg>
-            Limpar Histórico
-          </button>
-        </div>
-        <div id="history-list" class="history-list">
-          <div class="empty-state">
-            <svg class="empty-icon" viewBox="0 0 24 24" fill="none">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2"/>
-              <path d="M3 3v5h5M12 7v5l4 2" stroke="currentColor" stroke-width="2"/>
-            </svg>
-            <h3>Nenhum documento no histórico</h3>
-            <p>Os documentos processados aparecerão aqui</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Container -->
-  <div id="toast-container" class="toast-container"></div>
-
-  <!-- Scripts -->
-  <script src="./src/js/utils/constants.js"></script>
-  <script src="./src/js/utils/helpers.js"></script>
-  <script src="./src/js/utils/storage.js"></script>
-  <script src="./src/js/utils/validators.js"></script>
-  <script src="./src/js/components/toast.js"></script>
-  <script src="./src/js/components/modal.js"></script>
-  <script src="./src/js/components/theme.js"></script>
-  <script src="./src/js/core/camera.js"></script>
-  <script src="./src/js/core/ocr.js"></script>
-  <script src="./src/js/core/barcode.js"></script>
-  <script src="./src/js/core/app.js"></script>
   
-  <!-- Service Worker -->
+  <!-- External Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  
   <script>
+    // Global variables
+    let stream = null;
+    let isValidating = false;
+    
+    // Document validation functions
+    function validateCPF(cpf) {
+      cpf = cpf.replace(/[^\d]/g, '');
+      
+      if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+        return false;
+      }
+      
+      let sum = 0;
+      for (let i = 0; i < 9; i++) {
+        sum += parseInt(cpf.charAt(i)) * (10 - i);
+      }
+      let remainder = (sum * 10) % 11;
+      if (remainder === 10 || remainder === 11) remainder = 0;
+      if (remainder !== parseInt(cpf.charAt(9))) return false;
+      
+      sum = 0;
+      for (let i = 0; i < 10; i++) {
+        sum += parseInt(cpf.charAt(i)) * (11 - i);
+      }
+      remainder = (sum * 10) % 11;
+      if (remainder === 10 || remainder === 11) remainder = 0;
+      if (remainder !== parseInt(cpf.charAt(10))) return false;
+      
+      return true;
+    }
+    
+    function validateCNPJ(cnpj) {
+      cnpj = cnpj.replace(/[^\d]/g, '');
+      
+      if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) {
+        return false;
+      }
+      
+      let length = cnpj.length - 2;
+      let numbers = cnpj.substring(0, length);
+      let digits = cnpj.substring(length);
+      let sum = 0;
+      let pos = length - 7;
+      
+      for (let i = length; i >= 1; i--) {
+        sum += numbers.charAt(length - i) * pos--;
+        if (pos < 2) pos = 9;
+      }
+      
+      let result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+      if (result !== parseInt(digits.charAt(0))) return false;
+      
+      length = length + 1;
+      numbers = cnpj.substring(0, length);
+      sum = 0;
+      pos = length - 7;
+      
+      for (let i = length; i >= 1; i--) {
+        sum += numbers.charAt(length - i) * pos--;
+        if (pos < 2) pos = 9;
+      }
+      
+      result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+      if (result !== parseInt(digits.charAt(1))) return false;
+      
+      return true;
+    }
+    
+    function formatDocument(value, type) {
+      const numbers = value.replace(/[^\d]/g, '');
+      
+      if (type === 'cpf') {
+        return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      } else if (type === 'cnpj') {
+        return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+      }
+      
+      return numbers;
+    }
+    
+    // Main validation function
+    function validateDocument() {
+      if (isValidating) return;
+      
+      const input = document.getElementById('document-input');
+      const typeSelect = document.getElementById('document-type');
+      const resultDiv = document.getElementById('validation-result');
+      const resultText = document.getElementById('validation-text');
+      
+      const documentValue = input.value.trim();
+      const type = typeSelect.value;
+      
+      if (!documentValue) {
+        showToast('Por favor, digite um documento', 'error');
+        return;
+      }
+      
+      isValidating = true;
+      
+      // Format document
+      const formatted = formatDocument(documentValue, type);
+      input.value = formatted;
+      
+      // Validate
+      let isValid = false;
+      if (type === 'cpf') {
+        isValid = validateCPF(formatted);
+      } else if (type === 'cnpj') {
+        isValid = validateCNPJ(formatted);
+      }
+      
+      // Show result
+      resultDiv.className = `validation-result ${isValid ? 'valid' : 'invalid'}`;
+      resultText.textContent = isValid 
+        ? `✅ ${type.toUpperCase()} válido!` 
+        : `❌ ${type.toUpperCase()} inválido!`;
+      resultDiv.classList.remove('hidden');
+      
+      // Generate barcode if valid
+      if (isValid) {
+        generateBarcode(formatted.replace(/[^\d]/g, ''));
+        showToast('Documento validado com sucesso!', 'success');
+      } else {
+        hideBarcode();
+        showToast('Documento inválido', 'error');
+      }
+      
+      isValidating = false;
+    }
+    
+    // Barcode generation
+    function generateBarcode(text) {
+      try {
+        const barcodeSection = document.getElementById('barcode-section');
+        const barcodeSvg = document.getElementById('barcode');
+        
+        JsBarcode(barcodeSvg, text, {
+          format: "CODE128",
+          width: 2,
+          height: 100,
+          displayValue: true,
+          fontSize: 16,
+          margin: 10
+        });
+        
+        barcodeSection.classList.remove('hidden');
+      } catch (error) {
+        console.error('Erro ao gerar código de barras:', error);
+        showToast('Erro ao gerar código de barras', 'error');
+      }
+    }
+    
+    function hideBarcode() {
+      document.getElementById('barcode-section').classList.add('hidden');
+    }
+    
+    function downloadBarcode() {
+      const svg = document.getElementById('barcode');
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        const link = document.createElement('a');
+        link.download = 'codigo-barras.png';
+        link.href = canvas.toDataURL();
+        link.click();
+      };
+      
+      img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+    }
+    
+    // Camera functions
+    async function toggleCamera() {
+      const cameraSection = document.getElementById('camera-section');
+      
+      if (cameraSection.classList.contains('hidden')) {
+        await startCamera();
+      } else {
+        stopCamera();
+      }
+    }
+    
+    async function startCamera() {
+      try {
+        const cameraSection = document.getElementById('camera-section');
+        const video = document.getElementById('video');
+        
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          } 
+        });
+        
+        video.srcObject = stream;
+        cameraSection.classList.remove('hidden');
+        
+        showToast('Câmera ativada', 'success');
+      } catch (error) {
+        console.error('Erro ao acessar câmera:', error);
+        showToast('Erro ao acessar câmera', 'error');
+      }
+    }
+    
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      
+      document.getElementById('camera-section').classList.add('hidden');
+      showToast('Câmera desativada', 'success');
+    }
+    
+    async function captureImage() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('canvas');
+      const loading = document.getElementById('ocr-loading');
+      
+      if (!video.videoWidth) {
+        showToast('Câmera não está pronta', 'error');
+        return;
+      }
+      
+      // Capture image
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      
+      // Show loading
+      loading.classList.add('show');
+      
+      try {
+        // OCR processing
+        const { data: { text } } = await Tesseract.recognize(canvas, 'por', {
+          logger: m => console.log(m)
+        });
+        
+        // Extract numbers
+        const numbers = text.replace(/[^\d]/g, '');
+        
+        if (numbers.length >= 11) {
+          document.getElementById('document-input').value = numbers;
+          
+          // Auto-detect document type
+          if (numbers.length === 11) {
+            document.getElementById('document-type').value = 'cpf';
+          } else if (numbers.length === 14) {
+            document.getElementById('document-type').value = 'cnpj';
+          }
+          
+          showToast('Texto extraído com sucesso!', 'success');
+          
+          // Auto-validate
+          setTimeout(() => validateDocument(), 500);
+        } else {
+          showToast('Nenhum documento encontrado na imagem', 'error');
+        }
+        
+      } catch (error) {
+        console.error('Erro no OCR:', error);
+        showToast('Erro ao processar imagem', 'error');
+      } finally {
+        loading.classList.remove('show');
+      }
+    }
+    
+    // Utility functions
+    function clearAll() {
+      document.getElementById('document-input').value = '';
+      document.getElementById('validation-result').classList.add('hidden');
+      hideBarcode();
+      stopCamera();
+      showToast('Dados limpos', 'success');
+    }
+    
+    function showToast(message, type = 'info') {
+      // Remove existing toast
+      const existingToast = document.querySelector('.toast');
+      if (existingToast) {
+        existingToast.remove();
+      }
+      
+      // Create new toast
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // Show toast
+      setTimeout(() => toast.classList.add('show'), 100);
+      
+      // Hide toast
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    
+    // Auto-format input
+    document.getElementById('document-input').addEventListener('input', function(e) {
+      const type = document.getElementById('document-type').value;
+      const formatted = formatDocument(e.target.value, type);
+      e.target.value = formatted;
+    });
+    
+    // Change document type
+    document.getElementById('document-type').addEventListener('change', function(e) {
+      const input = document.getElementById('document-input');
+      if (input.value) {
+        const formatted = formatDocument(input.value, e.target.value);
+        input.value = formatted;
+      }
+      
+      // Update placeholder
+      if (e.target.value === 'cpf') {
+        input.placeholder = 'Ex: 123.456.789-00';
+        input.maxLength = 14;
+      } else {
+        input.placeholder = 'Ex: 12.345.678/0001-90';
+        input.maxLength = 18;
+      }
+    });
+    
+    // Enter key validation
+    document.getElementById('document-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        validateDocument();
+      }
+    });
+    
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', function() {
+      showToast('Scanner de Documentos carregado!', 'success');
+      console.log('Scanner de Documentos v2.0 - Versão Corrigida');
+    });
+    
+    // Service Worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
+        navigator.serviceWorker.register('sw.js')
           .then(registration => console.log('SW registered'))
           .catch(error => console.log('SW registration failed'));
       });

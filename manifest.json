@@ -1,0 +1,56 @@
+{
+  "name": "Scanner de Documentos - CPF & CNPJ",
+  "short_name": "Scanner CPF",
+  "description": "Escaneie documentos, extraia CPF/CNPJ e gere códigos de barras",
+  "version": "2.0.1",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1e40af",
+  "background_color": "#1e40af",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "business"],
+  "shortcuts": [
+    {
+      "name": "Escanear CPF",
+      "short_name": "CPF",
+      "description": "Escanear documento CPF",
+      "url": "/?type=cpf",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Escanear CNPJ",
+      "short_name": "CNPJ", 
+      "description": "Escanear documento CNPJ",
+      "url": "/?type=cnpj",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
+
