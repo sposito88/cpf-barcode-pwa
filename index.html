@@ -529,20 +529,23 @@
         const cameraSection = document.getElementById('camera-section');
         const video = document.getElementById('video');
         
-        // Configurações avançadas de câmera com foco automático
+        // Configurações mais agressivas de câmera com foco forçado
         const constraints = {
           video: {
             facingMode: 'environment',
-            width: { ideal: 1280, min: 640 },
-            height: { ideal: 720, min: 480 },
-            // Configurações de foco
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            // Configurações de foco mais agressivas
             focusMode: 'continuous',
-            focusDistance: { ideal: 0.1 }, // Foco para objetos próximos
-            // Configurações de exposição
+            focusDistance: { ideal: 0.15, min: 0.1, max: 0.5 },
+            // Configurações de exposição otimizadas
             exposureMode: 'continuous',
+            exposureCompensation: { ideal: 0 },
             whiteBalanceMode: 'continuous',
-            // Configurações de zoom
-            zoom: { ideal: 1.0, min: 1.0, max: 3.0 }
+            // Configurações de zoom e qualidade
+            zoom: { ideal: 1.2, min: 1.0, max: 2.0 },
+            // Forçar auto-foco
+            torch: false
           }
         };
         
@@ -550,34 +553,23 @@
         
         video.srcObject = stream;
         
-        // Aguardar o vídeo carregar
+        // Aguardar o vídeo carregar completamente
         await new Promise((resolve) => {
-          video.onloadedmetadata = resolve;
+          video.onloadedmetadata = () => {
+            video.play().then(resolve);
+          };
         });
         
-        // Aplicar configurações avançadas de foco se suportadas
+        // Aplicar configurações avançadas de foco de forma mais agressiva
         const track = stream.getVideoTracks()[0];
         const capabilities = track.getCapabilities();
         
-        if (capabilities.focusMode) {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous',
-              focusDistance: 0.1
-            }]
-          });
-        }
+        console.log('Capacidades da câmera:', capabilities);
         
-        // Configurar foco automático contínuo
-        if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-          await track.applyConstraints({
-            focusMode: 'continuous'
-          });
-        }
+        // Múltiplas tentativas de configuração de foco
+        await applyFocusSettings(track, capabilities);
         
         cameraSection.classList.remove('hidden');
-        
-        showToast('Câmera ativada com foco automático', 'success');
         
         // Adicionar controles de foco manual
         addFocusControls(track, capabilities);
@@ -586,10 +578,24 @@
         currentTrack = track;
         focusCapabilities = capabilities;
         
+        // Adicionar evento de toque para focar
+        addTouchToFocus(video);
+        
+        // Iniciar foco automático periódico
+        startPeriodicFocus();
+        
+        // Iniciar detecção de movimento
+        startMotionDetection(video);
+        
+        // Iniciar detecção de orientação
+        startOrientationDetection();
+        
+        showToast('Câmera ativada com foco avançado - Toque na tela para focar', 'success');
+        
       } catch (error) {
         console.error('Erro ao acessar câmera:', error);
         
-        // Fallback para configurações básicas
+        // Fallback mais simples mas ainda com tentativa de foco
         try {
           stream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
@@ -601,12 +607,388 @@
           
           const video = document.getElementById('video');
           video.srcObject = stream;
-          document.getElementById('camera-section').classList.remove('hidden');
           
-          showToast('Câmera ativada (modo básico)', 'success');
+          await new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+              video.play().then(resolve);
+            };
+          });
+          
+          const track = stream.getVideoTracks()[0];
+          currentTrack = track;
+          
+          // Tentar aplicar foco básico mesmo no fallback
+          try {
+            await track.applyConstraints({
+              focusMode: 'continuous'
+            });
+          } catch (focusError) {
+            console.log('Foco automático não disponível');
+          }
+          
+          document.getElementById('camera-section').classList.remove('hidden');
+          addTouchToFocus(video);
+          
+          // Iniciar detecção de orientação mesmo no fallback
+          startOrientationDetection();
+          
+          showToast('Câmera ativada (modo básico) - Toque na tela para focar', 'success');
         } catch (fallbackError) {
           showToast('Erro ao acessar câmera', 'error');
         }
+      }
+    }
+    
+    // Função para aplicar configurações de foco de forma robusta
+    async function applyFocusSettings(track, capabilities) {
+      const focusStrategies = [
+        // Estratégia 1: Foco contínuo com distância específica
+        async () => {
+          if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+            await track.applyConstraints({
+              focusMode: 'continuous',
+              focusDistance: 0.15
+            });
+            console.log('Aplicado: foco contínuo com distância 0.15');
+          }
+        },
+        
+        // Estratégia 2: Foco manual forçado
+        async () => {
+          if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
+            await track.applyConstraints({
+              focusMode: 'manual',
+              focusDistance: 0.2
+            });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await track.applyConstraints({
+              focusMode: 'continuous'
+            });
+            console.log('Aplicado: foco manual -> contínuo');
+          }
+        },
+        
+        // Estratégia 3: Single-shot repetido
+        async () => {
+          if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
+            for (let i = 0; i < 3; i++) {
+              await track.applyConstraints({
+                focusMode: 'single-shot'
+              });
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            await track.applyConstraints({
+              focusMode: 'continuous'
+            });
+            console.log('Aplicado: múltiplos single-shot');
+          }
+        },
+        
+        // Estratégia 4: Configurações avançadas
+        async () => {
+          const advancedConstraints = {
+            advanced: [{
+              focusMode: 'continuous',
+              focusDistance: { ideal: 0.15, min: 0.1, max: 0.3 }
+            }]
+          };
+          
+          if (capabilities.focusDistance) {
+            await track.applyConstraints(advancedConstraints);
+            console.log('Aplicado: configurações avançadas');
+          }
+        }
+      ];
+      
+      // Tentar cada estratégia
+      for (const strategy of focusStrategies) {
+        try {
+          await strategy();
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (error) {
+          console.log('Estratégia de foco falhou:', error.message);
+        }
+      }
+    }
+    
+    // Adicionar toque na tela para focar
+    function addTouchToFocus(video) {
+      // Remover listeners anteriores
+      video.removeEventListener('click', handleTouchToFocus);
+      video.removeEventListener('touchstart', handleTouchToFocus);
+      
+      // Adicionar novos listeners
+      video.addEventListener('click', handleTouchToFocus);
+      video.addEventListener('touchstart', handleTouchToFocus);
+      
+      // Adicionar indicador visual
+      video.style.cursor = 'crosshair';
+      video.title = 'Toque para focar';
+    }
+    
+    // Handler para toque na tela
+    async function handleTouchToFocus(event) {
+      event.preventDefault();
+      
+      if (!currentTrack) return;
+      
+      // Mostrar indicador visual de foco
+      showFocusIndicator(event);
+      
+      // Aplicar foco agressivo
+      await performAggressiveFocus();
+    }
+    
+    // Mostrar indicador visual de foco
+    function showFocusIndicator(event) {
+      const video = event.target;
+      const rect = video.getBoundingClientRect();
+      
+      // Calcular posição relativa
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      // Criar indicador de foco
+      const indicator = document.createElement('div');
+      indicator.style.cssText = `
+        position: absolute;
+        left: ${x - 25}px;
+        top: ${y - 25}px;
+        width: 50px;
+        height: 50px;
+        border: 2px solid #00ff00;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1000;
+        animation: focusRing 1s ease-out;
+      `;
+      
+      // Adicionar animação CSS se não existir
+      if (!document.getElementById('focus-animation-style')) {
+        const style = document.createElement('style');
+        style.id = 'focus-animation-style';
+        style.textContent = `
+          @keyframes focusRing {
+            0% { transform: scale(1.5); opacity: 0; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Adicionar ao container da câmera
+      const cameraSection = document.getElementById('camera-section');
+      cameraSection.style.position = 'relative';
+      cameraSection.appendChild(indicator);
+      
+      // Remover após animação
+      setTimeout(() => {
+        if (indicator.parentNode) {
+          indicator.parentNode.removeChild(indicator);
+        }
+      }, 1000);
+    }
+    
+    // Foco agressivo com múltiplas tentativas
+    async function performAggressiveFocus() {
+      if (!currentTrack) return;
+      
+      try {
+        showToast('Focalizando...', 'info');
+        
+        // Sequência de foco agressiva
+        const focusSequence = [
+          // 1. Reset para manual
+          { focusMode: 'manual', focusDistance: 0.5 },
+          // 2. Foco próximo
+          { focusMode: 'manual', focusDistance: 0.1 },
+          // 3. Foco médio
+          { focusMode: 'manual', focusDistance: 0.2 },
+          // 4. Voltar para contínuo
+          { focusMode: 'continuous', focusDistance: 0.15 }
+        ];
+        
+        for (const constraint of focusSequence) {
+          try {
+            await currentTrack.applyConstraints(constraint);
+            await new Promise(resolve => setTimeout(resolve, 150));
+          } catch (error) {
+            console.log('Constraint falhou:', constraint, error.message);
+          }
+        }
+        
+        // Trigger adicional de single-shot se disponível
+        if (focusCapabilities && focusCapabilities.focusMode && 
+            focusCapabilities.focusMode.includes('single-shot')) {
+          try {
+            await currentTrack.applyConstraints({ focusMode: 'single-shot' });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await currentTrack.applyConstraints({ focusMode: 'continuous' });
+          } catch (error) {
+            console.log('Single-shot falhou:', error.message);
+          }
+        }
+        
+        showToast('Foco aplicado!', 'success');
+        
+      } catch (error) {
+        console.error('Erro no foco agressivo:', error);
+        showToast('Erro ao aplicar foco', 'error');
+      }
+    }
+    
+    // Foco automático periódico
+    let focusInterval;
+    let motionDetectionInterval;
+    let lastFrameData = null;
+    
+    function startPeriodicFocus() {
+      // Limpar interval anterior
+      if (focusInterval) {
+        clearInterval(focusInterval);
+      }
+      
+      // Aplicar foco a cada 5 segundos
+      focusInterval = setInterval(async () => {
+        if (currentTrack && focusCapabilities) {
+          try {
+            // Foco suave periódico
+            if (focusCapabilities.focusMode && 
+                focusCapabilities.focusMode.includes('single-shot')) {
+              await currentTrack.applyConstraints({ focusMode: 'single-shot' });
+              await new Promise(resolve => setTimeout(resolve, 200));
+              await currentTrack.applyConstraints({ focusMode: 'continuous' });
+            }
+          } catch (error) {
+            console.log('Foco periódico falhou:', error.message);
+          }
+        }
+      }, 5000);
+    }
+    
+    // Detecção de movimento para re-foco automático
+    function startMotionDetection(video) {
+      // Limpar interval anterior
+      if (motionDetectionInterval) {
+        clearInterval(motionDetectionInterval);
+      }
+      
+      // Criar canvas para análise de movimento
+      const motionCanvas = document.createElement('canvas');
+      const motionCtx = motionCanvas.getContext('2d');
+      
+      // Configurar canvas
+      motionCanvas.width = 160; // Resolução baixa para performance
+      motionCanvas.height = 120;
+      
+      let motionThreshold = 30; // Limiar de movimento
+      let consecutiveMotionFrames = 0;
+      
+      // Verificar movimento a cada 500ms
+      motionDetectionInterval = setInterval(() => {
+        if (!video.videoWidth || !video.videoHeight) return;
+        
+        try {
+          // Capturar frame atual
+          motionCtx.drawImage(video, 0, 0, motionCanvas.width, motionCanvas.height);
+          const currentFrameData = motionCtx.getImageData(0, 0, motionCanvas.width, motionCanvas.height);
+          
+          if (lastFrameData) {
+            // Calcular diferença entre frames
+            const motionLevel = calculateMotionLevel(lastFrameData.data, currentFrameData.data);
+            
+            if (motionLevel > motionThreshold) {
+              consecutiveMotionFrames++;
+              
+              // Se detectar movimento por 2 frames consecutivos, aplicar re-foco
+              if (consecutiveMotionFrames >= 2) {
+                triggerMotionRefocus();
+                consecutiveMotionFrames = 0;
+              }
+            } else {
+              consecutiveMotionFrames = 0;
+            }
+          }
+          
+          lastFrameData = currentFrameData;
+          
+        } catch (error) {
+          console.log('Erro na detecção de movimento:', error.message);
+        }
+      }, 500);
+    }
+    
+    // Calcular nível de movimento entre dois frames
+    function calculateMotionLevel(prevData, currData) {
+      let totalDiff = 0;
+      const pixelCount = prevData.length / 4; // 4 bytes por pixel (RGBA)
+      
+      for (let i = 0; i < prevData.length; i += 4) {
+        // Calcular diferença em escala de cinza
+        const prevGray = (prevData[i] + prevData[i + 1] + prevData[i + 2]) / 3;
+        const currGray = (currData[i] + currData[i + 1] + currData[i + 2]) / 3;
+        
+        totalDiff += Math.abs(prevGray - currGray);
+      }
+      
+      return totalDiff / pixelCount;
+    }
+    
+    // Re-foco automático por movimento
+    async function triggerMotionRefocus() {
+      if (!currentTrack || !focusCapabilities) return;
+      
+      try {
+        console.log('Movimento detectado - aplicando re-foco');
+        
+        // Re-foco rápido por movimento
+        if (focusCapabilities.focusMode && 
+            focusCapabilities.focusMode.includes('single-shot')) {
+          await currentTrack.applyConstraints({ focusMode: 'single-shot' });
+          await new Promise(resolve => setTimeout(resolve, 300));
+          await currentTrack.applyConstraints({ focusMode: 'continuous' });
+        } else if (focusCapabilities.focusMode && 
+                   focusCapabilities.focusMode.includes('manual')) {
+          // Sequência rápida manual->contínuo
+          await currentTrack.applyConstraints({ 
+            focusMode: 'manual', 
+            focusDistance: 0.15 
+          });
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await currentTrack.applyConstraints({ focusMode: 'continuous' });
+        }
+        
+      } catch (error) {
+        console.log('Erro no re-foco por movimento:', error.message);
+      }
+    }
+    
+    // Detecção de orientação do dispositivo para re-foco
+    function startOrientationDetection() {
+      if (window.DeviceOrientationEvent) {
+        let lastOrientation = { alpha: 0, beta: 0, gamma: 0 };
+        let orientationChangeThreshold = 15; // graus
+        
+        window.addEventListener('deviceorientation', (event) => {
+          const { alpha, beta, gamma } = event;
+          
+          // Calcular mudança na orientação
+          const alphaChange = Math.abs(alpha - lastOrientation.alpha);
+          const betaChange = Math.abs(beta - lastOrientation.beta);
+          const gammaChange = Math.abs(gamma - lastOrientation.gamma);
+          
+          // Se mudança significativa, aplicar re-foco
+          if (alphaChange > orientationChangeThreshold || 
+              betaChange > orientationChangeThreshold || 
+              gammaChange > orientationChangeThreshold) {
+            
+            console.log('Mudança de orientação detectada - aplicando re-foco');
+            triggerMotionRefocus();
+            
+            lastOrientation = { alpha, beta, gamma };
+          }
+        });
       }
     }
     
@@ -617,6 +999,20 @@
         currentTrack = null;
         focusCapabilities = null;
       }
+      
+      // Limpar intervals
+      if (focusInterval) {
+        clearInterval(focusInterval);
+        focusInterval = null;
+      }
+      
+      if (motionDetectionInterval) {
+        clearInterval(motionDetectionInterval);
+        motionDetectionInterval = null;
+      }
+      
+      // Limpar dados de movimento
+      lastFrameData = null;
       
       document.getElementById('camera-section').classList.add('hidden');
       document.getElementById('focus-controls').classList.add('hidden');
