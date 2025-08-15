@@ -1,25 +1,209 @@
 {
-  "name": "Scanner de CPF → Código de Barras",
-  "short_name": "CPF → Código",
-  "description": "Aplicativo para escanear CPF em documentos e gerar códigos de barras",
-  "start_url": "./",
-  "scope": "./",
+  "name": "Scanner de Documentos - CPF & CNPJ",
+  "short_name": "Scanner CPF",
+  "description": "Scanner avançado de documentos brasileiros com geração de códigos de barras. Valide CPF e CNPJ, capture documentos com a câmera e gere códigos de barras instantaneamente.",
+  "version": "2.0.0",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0b1020",
-  "theme_color": "#0b1020",
-  "categories": ["utilities", "productivity"],
+  "orientation": "portrait-primary",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
   "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "business"],
   "icons": [
-    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "screenshots": [
     {
-      "src": "./icons/icon-512.png",
-      "sizes": "512x512",
+      "src": "/screenshots/desktop-home.png",
+      "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "Tela inicial do scanner no desktop"
+    },
+    {
+      "src": "/screenshots/mobile-scanner.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Scanner de documentos no mobile"
+    },
+    {
+      "src": "/screenshots/mobile-barcode.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Geração de código de barras"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Escanear CPF",
+      "short_name": "CPF",
+      "description": "Escanear documento CPF",
+      "url": "/?action=scan-cpf",
+      "icons": [
+        {
+          "src": "/icons/shortcut-cpf.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Escanear CNPJ",
+      "short_name": "CNPJ",
+      "description": "Escanear documento CNPJ",
+      "url": "/?action=scan-cnpj",
+      "icons": [
+        {
+          "src": "/icons/shortcut-cnpj.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Histórico",
+      "short_name": "Histórico",
+      "description": "Ver histórico de documentos",
+      "url": "/?action=history",
+      "icons": [
+        {
+          "src": "/icons/shortcut-history.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "image",
+          "accept": ["image/jpeg", "image/png", "image/webp"]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/handle-image",
+      "accept": {
+        "image/jpeg": [".jpg", ".jpeg"],
+        "image/png": [".png"],
+        "image/webp": [".webp"]
+      }
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+cpfscanner",
+      "url": "/?document=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "prefer_related_applications": false,
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.example.cpfscanner",
+      "id": "com.example.cpfscanner"
+    }
+  ],
+  "features": [
+    "camera",
+    "ocr",
+    "barcode-generation",
+    "offline-support",
+    "document-validation",
+    "history-management",
+    "theme-switching",
+    "responsive-design"
+  ],
+  "permissions": [
+    "camera",
+    "storage"
+  ],
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
   ]
 }
+

@@ -3,1774 +3,490 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Scanner de CPF → Código de Barras</title>
-  <meta name="theme-color" content="#0b1020">
+  <title>Scanner de Documentos - CPF & Códigos de Barras</title>
+  <meta name="description" content="Escaneie documentos, extraia CPF e gere códigos de barras de forma rápida e segura. Tudo processado localmente no seu dispositivo.">
+  <meta name="theme-color" content="#0f172a">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
-  <style>
-    :root { --bg:#0b1020; --card:#121936; --accent:#6ee7ff; --ok:#22c55e; --bad:#ef4444; --txt:#e5e7eb; }
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b1020,#0b0f1a);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Helvetica,Arial,sans-serif}
-    .wrap{max-width:980px;margin:0 auto;padding:16px}
-    .title{display:flex;gap:12px;align-items:center;}
-    .title h1{font-size:clamp(18px,3vw,28px);margin:0}
-    .card{background:var(--card);border:1px solid #263157;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:14px}
-    .grid{display:grid;gap:14px}
-    @media(min-width:900px){.grid{grid-template-columns:1.2fr .8fr}}
-    video{width:100%;border-radius:14px;background:#000}
-    canvas{display:none}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    button{appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer;background:#213055;color:#dbeafe;transition:.2s}
-    button:hover{filter:brightness(1.1)}
-    .primary{background:linear-gradient(135deg,#2563eb,#06b6d4);color:white}
-    .ghost{background:#1a2747}
-    input,select{width:100%;padding:12px;border-radius:12px;border:1px solid #2b3a62;background:#0f142b;color:#e5e7eb}
-    label{font-size:12px;opacity:.9}
-    .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid #2a365f;background:#0f1732}
-    .ok{color:var(--ok);border-color:#1b6e3b;background:#0b2b18}
-    .bad{color:var(--bad);border-color:#6e1b1b;background:#2b0b0b}
-    .muted{opacity:.8}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .barcode-wrap{display:grid;place-content:center;background:#0b0f1c;border-radius:12px;padding:14px;border:1px dashed #263157}
-    svg{max-width:100%}
-    .foot{opacity:.7;font-size:12px;margin-top:12px}
-    .progress{height:10px;background:#0f1a35;border-radius:999px;overflow:hidden;border:1px solid #203158}
-    .progress>i{display:block;height:100%;background:linear-gradient(90deg,#1f8ffd,#22d3ee);width:0}
-    .hint{font-size:12px;opacity:.85}
-    
-    /* Melhorias para PWA */
-    .install-prompt{position:fixed;top:16px;right:16px;background:var(--card);border:1px solid #263157;border-radius:12px;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.3);z-index:1000;max-width:300px;display:none}
-    .install-prompt.show{display:block}
-    .install-prompt button{margin-top:8px;width:100%}
-    .install-prompt .close{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--txt);font-size:18px;cursor:pointer;padding:4px}
-    
-    /* Melhorias para câmera */
-    .camera-container{position:relative}
-    .focus-indicator{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:80px;border:2px solid var(--accent);border-radius:8px;pointer-events:none;opacity:0.7;display:none;transition:all 0.3s ease}
-    .focus-indicator.active{display:block}
-    .focus-indicator.focusing{border-color:#22c55e;box-shadow:0 0 20px rgba(34,197,94,0.5);animation:pulse 1s infinite}
-    @keyframes pulse{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.05)}100%{transform:translate(-50%,-50%) scale(1)}}
-    
-    /* Melhorias para feedback */
-    .status-message{background:var(--card);border-radius:8px;padding:8px 12px;margin-top:8px;border-left:3px solid var(--accent);animation:slideIn 0.3s ease}
-    .status-message.error{border-left-color:var(--bad)}
-    .status-message.success{border-left-color:var(--ok)}
-    @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-  </style>
-  <!-- libs via CDN -->
-  <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <link rel="apple-touch-icon" href="./src/assets/icons/icon-192.png">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="./src/css/base/variables.css" as="style">
+  <link rel="preload" href="./src/css/base/reset.css" as="style">
+  <link rel="preload" href="./src/css/base/typography.css" as="style">
+  
+  <!-- CSS -->
+  <link rel="stylesheet" href="./src/css/base/variables.css">
+  <link rel="stylesheet" href="./src/css/base/reset.css">
+  <link rel="stylesheet" href="./src/css/base/typography.css">
+  <link rel="stylesheet" href="./src/css/components/layout.css">
+  <link rel="stylesheet" href="./src/css/components/buttons.css">
+  <link rel="stylesheet" href="./src/css/components/cards.css">
+  <link rel="stylesheet" href="./src/css/components/forms.css">
+  <link rel="stylesheet" href="./src/css/components/modals.css">
+  <link rel="stylesheet" href="./src/css/components/animations.css">
+  <link rel="stylesheet" href="./src/css/themes/dark.css">
+  
+  <!-- External libraries (loaded on demand) -->
+  <script>
+    window.LIBS_LOADED = {
+      tesseract: false,
+      jsbarcode: false
+    };
+  </script>
 </head>
-<body>
-  <!-- Prompt de instalação PWA -->
-  <div id="installPrompt" class="install-prompt">
-    <button class="close" onclick="hideInstallPrompt()">×</button>
-    <div>📱 Instalar app no dispositivo?</div>
-    <button id="installBtn" class="primary">Instalar</button>
-    <button onclick="hideInstallPrompt()" class="ghost">Agora não</button>
+<body class="theme-dark">
+  <!-- Loading Screen -->
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <h2>Carregando Scanner de Documentos</h2>
+      <p>Preparando as ferramentas de OCR...</p>
+    </div>
   </div>
 
-  <div class="wrap">
-    <div class="title">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 4H4a1 1 0 0 0-1 1v3M17 4h3a1 1 0 0 1 1 1v3M7 20H4a1 1 0 0 1-1-1v-3M17 20h3a1 1 0 0 0 1-1v-3" stroke="#6ee7ff" stroke-width="1.5" stroke-linecap="round"/><rect x="6" y="7" width="12" height="10" rx="2" stroke="#6ee7ff" stroke-width="1.5"/></svg>
-      <h1>Scanner de CPF → Código de Barras</h1>
-    </div>
-
-    <div class="grid">
-      <!-- Lado esquerdo: câmera e OCR -->
-      <div class="card">
-        <div class="row">
-          <button id="btnStart" class="primary">📷 Ligar câmera</button>
-          <button id="btnShot" class="ghost" disabled>🖼️ Capturar & Ler CPF</button>
-          <button id="btnStop" class="ghost" disabled>⏹️ Desligar câmera</button>
-        </div>
-        <div class="row">
-          <button id="btnFocus" class="ghost" disabled>🎯 Focar Documento</button>
-          <button id="btnAutoFocus" class="ghost" disabled>🔄 Auto Foco</button>
-        </div>
-        <div class="row">
-          <button id="btnUltraFocus" class="primary" disabled>🚀 Foco Ultra</button>
-          <button id="btnAggressiveFocus" class="primary" disabled>⚡ Foco Agressivo</button>
-        </div>
-        <div class="row">
-          <button id="btnForceFocus" class="primary" disabled>🔥 Forçar Foco</button>
-          <button id="btnManualFocus" class="ghost" disabled>📏 Foco Manual</button>
-        </div>
-        <div class="row">
-          <button id="btnExposure" class="ghost" disabled>☀️ Ajustar Exposição</button>
-          <button id="btnFlash" class="ghost" disabled>💡 Flash</button>
-        </div>
-        <div class="row">
-          <button id="btnReset" class="ghost" disabled>🔄 Reset Câmera</button>
-        </div>
-        <div class="hint">Dica: aponte para um documento ou texto que contenha o CPF. Boa luz ajuda o OCR.</div>
-        <div class="camera-container">
-          <video id="video" playsinline muted></video>
-          <div id="focusIndicator" class="focus-indicator"></div>
-        </div>
-        <canvas id="frame"></canvas>
-        <div class="row" style="margin-top:8px">
-          <div class="progress" style="flex:1"><i id="pbar"></i></div>
-          <span id="status" class="badge muted">Aguardando…</span>
-        </div>
-        <div id="statusMessage" class="status-message" style="display:none"></div>
-      </div>
-
-      <!-- Lado direito: resultado, validação e barcode -->
-      <div class="card">
-        <div class="row">
-          <div style="flex:1">
-            <label for="cpf">CPF detectado (edite se necessário)</label>
-            <input id="cpf" inputmode="numeric" placeholder="___.___.___-__" />
+  <!-- Main App -->
+  <div id="app" class="app hidden">
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <div class="header-content">
+          <div class="logo">
+            <svg class="logo-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M7 4H4a1 1 0 0 0-1 1v3M17 4h3a1 1 0 0 1 1 1v3M7 20H4a1 1 0 0 1-1-1v-3M17 20h3a1 1 0 0 0 1-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <rect x="6" y="7" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            <div class="logo-text">
+              <h1>Scanner de Documentos</h1>
+              <span>CPF & Códigos de Barras</span>
+            </div>
           </div>
-          <div>
-            <label>&nbsp;</label>
-            <button id="btnValidate" class="primary">✅ Validar & Gerar Código</button>
+          
+          <div class="header-actions">
+            <button id="theme-toggle" class="btn-icon" title="Alternar tema">
+              <svg class="icon-sun" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <svg class="icon-moon hidden" viewBox="0 0 24 24" fill="none">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+            
+            <button id="settings-btn" class="btn-icon" title="Configurações">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 1v6M12 17v6M5.64 5.64l4.24 4.24M14.12 14.12l4.24 4.24M1 12h6M17 12h6M5.64 18.36l4.24-4.24M14.12 9.88l4.24-4.24" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
+            
+            <button id="history-btn" class="btn-icon" title="Histórico">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2"/>
+                <path d="M3 3v5h5M12 7v5l4 2" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
           </div>
         </div>
-        <div class="row">
-          <span id="validBadge" class="badge muted">CPF não verificado</span>
-          <select id="symbology" title="Tipo de código de barras">
-            <option value="CODE128" selected>CODE128 (recomendado)</option>
-            <option value="ITF">Interleaved 2 of 5</option>
-            <option value="MSI">MSI</option>
-          </select>
-          <button id="btnDownload" class="ghost" disabled>⬇️ Baixar código de barras (PNG)</button>
-        </div>
-        <div class="barcode-wrap" style="margin-top:8px">
-          <svg id="barcode"></svg>
-        </div>
-        <div class="foot">Privacidade: todo o processamento ocorre no seu dispositivo. Nenhum dado é enviado a servidores.</div>
       </div>
-    </div>
+    </header>
 
-    <p class="foot">Observação: o CPF possui 11 dígitos e dois dígitos verificadores. O app valida a sequência e remove formatações. Se o OCR errar algum dígito, toque no campo e corrija antes de gerar o código.</p>
+    <!-- Main Content -->
+    <main class="main">
+      <div class="container">
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+          <div class="quick-action-grid">
+            <button id="scan-cpf" class="quick-action-card active">
+              <div class="quick-action-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M7 8h10M7 12h6" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="quick-action-content">
+                <h3>Escanear CPF</h3>
+                <p>Extrair CPF de documentos</p>
+              </div>
+            </button>
+            
+            <button id="scan-cnpj" class="quick-action-card">
+              <div class="quick-action-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="quick-action-content">
+                <h3>Escanear CNPJ</h3>
+                <p>Extrair CNPJ de documentos</p>
+              </div>
+            </button>
+            
+            <button id="manual-input" class="quick-action-card">
+              <div class="quick-action-icon">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2"/>
+                  <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="quick-action-content">
+                <h3>Entrada Manual</h3>
+                <p>Digitar documento manualmente</p>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        <!-- Scanner Section -->
+        <section id="scanner-section" class="scanner-section">
+          <div class="scanner-grid">
+            <!-- Camera Panel -->
+            <div class="scanner-panel">
+              <div class="panel-header">
+                <h2>Câmera & Scanner</h2>
+                <div class="panel-actions">
+                  <button id="camera-flip" class="btn-icon" title="Alternar câmera" disabled>
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M17 8l4-4m0 0l-4-4m4 4H7a4 4 0 0 0-4 4v4" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                  <button id="flash-toggle" class="btn-icon" title="Flash" disabled>
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="camera-container">
+                <video id="video" class="camera-video" playsinline muted></video>
+                <canvas id="canvas" class="camera-canvas"></canvas>
+                
+                <!-- Camera Overlay -->
+                <div class="camera-overlay">
+                  <div class="scan-frame">
+                    <div class="scan-corners">
+                      <div class="corner corner-tl"></div>
+                      <div class="corner corner-tr"></div>
+                      <div class="corner corner-bl"></div>
+                      <div class="corner corner-br"></div>
+                    </div>
+                    <div class="scan-line"></div>
+                  </div>
+                  
+                  <div class="camera-hint">
+                    <p>Posicione o documento dentro da moldura</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="camera-controls">
+                <button id="start-camera" class="btn btn-primary">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2v11z" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Ligar Câmera
+                </button>
+                
+                <button id="capture-photo" class="btn btn-accent" disabled>
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                  </svg>
+                  Capturar & Processar
+                </button>
+                
+                <button id="stop-camera" class="btn btn-secondary" disabled>
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                    <rect x="6" y="6" width="12" height="12" fill="currentColor"/>
+                  </svg>
+                  Parar
+                </button>
+              </div>
+              
+              <!-- Progress Bar -->
+              <div id="ocr-progress" class="progress-container hidden">
+                <div class="progress-bar">
+                  <div class="progress-fill"></div>
+                </div>
+                <div class="progress-text">
+                  <span id="progress-status">Processando...</span>
+                  <span id="progress-percent">0%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel">
+              <div class="panel-header">
+                <h2>Resultado & Validação</h2>
+                <div class="panel-actions">
+                  <button id="clear-results" class="btn-icon" title="Limpar resultados">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="results-content">
+                <!-- Document Input -->
+                <div class="form-group">
+                  <label for="document-input">Documento Detectado</label>
+                  <div class="input-group">
+                    <input id="document-input" type="text" placeholder="___.___.___-__" class="form-input">
+                    <button id="format-document" class="btn-icon" title="Formatar documento">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <div id="validation-status" class="validation-status">
+                    <span class="status-badge status-pending">Aguardando validação</span>
+                  </div>
+                </div>
+                
+                <!-- Document Type -->
+                <div class="form-group">
+                  <label for="document-type">Tipo de Documento</label>
+                  <select id="document-type" class="form-select">
+                    <option value="cpf">CPF - Cadastro de Pessoa Física</option>
+                    <option value="cnpj">CNPJ - Cadastro Nacional de Pessoa Jurídica</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+                
+                <!-- Barcode Settings -->
+                <div class="form-group">
+                  <label for="barcode-format">Formato do Código de Barras</label>
+                  <select id="barcode-format" class="form-select">
+                    <option value="CODE128">CODE128 (Recomendado)</option>
+                    <option value="ITF">Interleaved 2 of 5</option>
+                    <option value="MSI">MSI</option>
+                    <option value="pharmacode">Pharmacode</option>
+                    <option value="codabar">Codabar</option>
+                  </select>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                  <button id="validate-document" class="btn btn-primary">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2"/>
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Validar & Gerar
+                  </button>
+                  
+                  <button id="save-to-history" class="btn btn-secondary" disabled>
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="2"/>
+                      <polyline points="17,21 17,13 7,13 7,21" stroke="currentColor" stroke-width="2"/>
+                      <polyline points="7,3 7,8 15,8" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Salvar no Histórico
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Barcode Display Section -->
+        <section id="barcode-section" class="barcode-section hidden">
+          <div class="barcode-panel">
+            <div class="panel-header">
+              <h2>Código de Barras Gerado</h2>
+              <div class="panel-actions">
+                <button id="download-barcode" class="btn btn-accent" disabled>
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Baixar PNG
+                </button>
+                
+                <button id="download-svg" class="btn btn-secondary" disabled>
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Baixar SVG
+                </button>
+                
+                <button id="print-barcode" class="btn btn-secondary" disabled>
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                    <polyline points="6,9 6,2 18,2 18,9" stroke="currentColor" stroke-width="2"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" stroke="currentColor" stroke-width="2"/>
+                    <rect x="6" y="14" width="12" height="8" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Imprimir
+                </button>
+              </div>
+            </div>
+            
+            <div class="barcode-display">
+              <div class="barcode-container">
+                <svg id="barcode-svg" class="barcode-svg"></svg>
+              </div>
+              
+              <div class="barcode-info">
+                <div class="info-item">
+                  <span class="info-label">Documento:</span>
+                  <span id="barcode-document" class="info-value">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Formato:</span>
+                  <span id="barcode-format-display" class="info-value">-</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Gerado em:</span>
+                  <span id="barcode-timestamp" class="info-value">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-info">
+            <p><strong>🔒 Privacidade Total:</strong> Todo o processamento ocorre localmente no seu dispositivo. Nenhum dado é enviado para servidores externos.</p>
+          </div>
+          <div class="footer-links">
+            <button id="about-btn" class="footer-link">Sobre</button>
+            <button id="help-btn" class="footer-link">Ajuda</button>
+            <button id="privacy-btn" class="footer-link">Privacidade</button>
+          </div>
+        </div>
+      </div>
+    </footer>
   </div>
 
-<script>
-  // ==== PWA Install Prompt ====
-  let deferredPrompt;
-  const installPrompt = document.getElementById('installPrompt');
-  const installBtn = document.getElementById('installBtn');
+  <!-- Modals -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Configurações</h2>
+        <button class="modal-close" data-modal="settings-modal">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <h3>Aparência</h3>
+          <div class="setting-item">
+            <label for="theme-select">Tema</label>
+            <select id="theme-select" class="form-select">
+              <option value="dark">Escuro</option>
+              <option value="light">Claro</option>
+              <option value="auto">Automático</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h3>Câmera</h3>
+          <div class="setting-item">
+            <label for="camera-quality">Qualidade da Imagem</label>
+            <select id="camera-quality" class="form-select">
+              <option value="high">Alta (Melhor OCR)</option>
+              <option value="medium">Média (Balanceado)</option>
+              <option value="low">Baixa (Mais Rápido)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label>
+              <input type="checkbox" id="auto-capture" class="form-checkbox">
+              Captura Automática
+            </label>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h3>Processamento</h3>
+          <div class="setting-item">
+            <label for="ocr-language">Idioma do OCR</label>
+            <select id="ocr-language" class="form-select">
+              <option value="por">Português</option>
+              <option value="eng">Inglês</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    installPrompt.classList.add('show');
-  });
+  <div id="history-modal" class="modal">
+    <div class="modal-content modal-large">
+      <div class="modal-header">
+        <h2>Histórico de Documentos</h2>
+        <button class="modal-close" data-modal="history-modal">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="history-controls">
+          <div class="search-box">
+            <input id="history-search" type="text" placeholder="Buscar no histórico..." class="form-input">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <button id="clear-history" class="btn btn-danger">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            Limpar Histórico
+          </button>
+        </div>
+        <div id="history-list" class="history-list">
+          <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" stroke="currentColor" stroke-width="2"/>
+              <path d="M3 3v5h5M12 7v5l4 2" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <h3>Nenhum documento no histórico</h3>
+            <p>Os documentos processados aparecerão aqui</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        console.log('PWA instalado com sucesso');
-      }
-      deferredPrompt = null;
-      hideInstallPrompt();
-    }
-  });
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
 
-  function hideInstallPrompt() {
-    installPrompt.classList.remove('show');
-  }
-
-  // ==== Utilidades CPF ====
-  function onlyDigits(s){ return (s||'').replace(/\D+/g,''); }
-  function formatCPF(d){ d = onlyDigits(d).slice(0,11); if(d.length<11) return d; return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4'); }
-  function isSeq(d){ return /^([0-9])\1{10}$/.test(d); }
-  function cpfCheckDigits(numbers){
-    const calc = (base, factor) => {
-      let sum = 0; for(let i=0;i<base.length;i++){ sum += parseInt(base[i],10) * (factor - i); }
-      const rest = (sum * 10) % 11; return (rest===10||rest===11)?0:rest;
-    };
-    const n = onlyDigits(numbers);
-    if(n.length!==11 || isSeq(n)) return false;
-    const d1 = calc(n.slice(0,9), 10);
-    const d2 = calc(n.slice(0,10), 11);
-    return d1 === parseInt(n[9],10) && d2 === parseInt(n[10],10);
-  }
-
-  // ==== Câmera com foco automático ====
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('frame');
-  const btnStart = document.getElementById('btnStart');
-  const btnShot  = document.getElementById('btnShot');
-  const btnStop  = document.getElementById('btnStop');
-  const btnFocus = document.getElementById('btnFocus');
-  const btnAutoFocus = document.getElementById('btnAutoFocus');
-  const btnUltraFocus = document.getElementById('btnUltraFocus');
-  const btnAggressiveFocus = document.getElementById('btnAggressiveFocus');
-  const btnForceFocus = document.getElementById('btnForceFocus'); // Adicionado
-  const btnManualFocus = document.getElementById('btnManualFocus');
-  const btnExposure = document.getElementById('btnExposure');
-  const btnFlash = document.getElementById('btnFlash');
-  const btnReset = document.getElementById('btnReset');
-  const statusEl = document.getElementById('status');
-  const pbar     = document.getElementById('pbar');
-  const focusIndicator = document.getElementById('focusIndicator');
-  const statusMessage = document.getElementById('statusMessage');
-
-  let stream;
-  let cameraCapabilities = {};
-  let focusCheckInterval = null;
-  let flashEnabled = false;
-  let manualFocusDistance = 0.1;
-  let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-  let isAndroid = /Android/i.test(navigator.userAgent);
-  let currentFocusMode = 'continuous';
+  <!-- Scripts -->
+  <script src="./src/js/utils/constants.js"></script>
+  <script src="./src/js/utils/helpers.js"></script>
+  <script src="./src/js/utils/storage.js"></script>
+  <script src="./src/js/utils/validators.js"></script>
+  <script src="./src/js/components/toast.js"></script>
+  <script src="./src/js/components/modal.js"></script>
+  <script src="./src/js/components/theme.js"></script>
+  <script src="./src/js/core/camera.js"></script>
+  <script src="./src/js/core/ocr.js"></script>
+  <script src="./src/js/core/barcode.js"></script>
+  <script src="./src/js/core/app.js"></script>
   
-  // Função para detectar se é dispositivo móvel
-  function detectMobileDevice() {
-    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const userAgent = navigator.userAgent.toLowerCase();
-    
-    console.log('Detecção de dispositivo:', {
-      mobile: mobile,
-      touch: touch,
-      userAgent: userAgent,
-      isIOS: isIOS,
-      isAndroid: isAndroid
-    });
-    
-    return mobile && touch;
-  }
-  
-  // Função para detectar capacidades da câmera
-  async function detectCameraCapabilities(stream) {
-    if (stream && stream.getVideoTracks().length > 0) {
-      const track = stream.getVideoTracks()[0];
-      try {
-        const capabilities = track.getCapabilities();
-        const settings = track.getSettings();
-        
-        cameraCapabilities = {
-          focusMode: capabilities.focusMode || [],
-          exposureMode: capabilities.exposureMode || [],
-          whiteBalanceMode: capabilities.whiteBalanceMode || [],
-          zoom: capabilities.zoom || { min: 1, max: 1 },
-          torch: capabilities.torch || false,
-          fillLightMode: capabilities.fillLightMode || [],
-          currentSettings: settings
-        };
-        
-        console.log('Capacidades da câmera:', cameraCapabilities);
-        console.log('Configurações atuais:', settings);
-        console.log('Dispositivo móvel:', isMobile, 'iOS:', isIOS, 'Android:', isAndroid);
-        
-        return capabilities;
-      } catch (e) {
-        console.log('Não foi possível detectar capacidades da câmera:', e);
-        return null;
-      }
-    }
-    return null;
-  }
-
-  // Função para detectar se a imagem está focada (otimizada para celulares)
-  function detectFocusQuality(imageData) {
-    const data = imageData.data;
-    const width = imageData.width;
-    const height = imageData.height;
-    let edgeCount = 0;
-    let totalPixels = 0;
-    let highContrastPixels = 0;
-    let sharpEdges = 0;
-    
-    // Para celulares, usa amostragem mais densa
-    const step = isMobile ? 1 : 2;
-    
-    // Analisa bordas na imagem (mais sensível para celulares)
-    for (let y = 1; y < height - 1; y += step) {
-      for (let x = 1; x < width - 1; x += step) {
-        totalPixels++;
-        const idx = (y * width + x) * 4;
-        const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
-        
-        // Detecta bordas em múltiplas direções
-        const right = (data[idx + 4] + data[idx + 5] + data[idx + 6]) / 3;
-        const bottom = (data[idx + width * 4] + data[idx + width * 4 + 1] + data[idx + width * 4 + 2]) / 3;
-        const diagonal = (data[idx + width * 4 + 4] + data[idx + width * 4 + 5] + data[idx + width * 4 + 6]) / 3;
-        
-        // Threshold mais baixo para celulares
-        const threshold = isMobile ? 10 : 15;
-        const highThreshold = isMobile ? 30 : 50;
-        
-        if (Math.abs(gray - right) > threshold || 
-            Math.abs(gray - bottom) > threshold || 
-            Math.abs(gray - diagonal) > threshold) {
-          edgeCount++;
-        }
-        
-        // Detecta pixels de alto contraste
-        if (Math.abs(gray - right) > highThreshold || Math.abs(gray - bottom) > highThreshold) {
-          highContrastPixels++;
-        }
-        
-        // Detecta bordas muito nítidas (para celulares)
-        if (isMobile && (Math.abs(gray - right) > 60 || Math.abs(gray - bottom) > 60)) {
-          sharpEdges++;
-        }
-      }
-    }
-    
-    const focusScore = edgeCount / totalPixels;
-    const contrastScore = highContrastPixels / totalPixels;
-    const sharpScore = isMobile ? sharpEdges / totalPixels : 0;
-    
-    // Score combinado com pesos diferentes para celulares
-    const combinedScore = isMobile ? 
-      (focusScore * 0.5) + (contrastScore * 0.3) + (sharpScore * 0.2) :
-      (focusScore * 0.7) + (contrastScore * 0.3);
-    
-    console.log('Score de foco:', {
-      focusScore,
-      contrastScore,
-      sharpScore,
-      combinedScore,
-      edges: edgeCount,
-      total: totalPixels,
-      isMobile
-    });
-    
-    // Thresholds mais baixos para celulares
-    const thresholds = isMobile ? {
-      focused: 0.02,
-      excellent: 0.08,
-      good: 0.04,
-      acceptable: 0.02
-    } : {
-      focused: 0.03,
-      excellent: 0.12,
-      good: 0.06,
-      acceptable: 0.03
-    };
-    
-    return {
-      score: combinedScore,
-      isFocused: combinedScore > thresholds.focused,
-      quality: combinedScore > thresholds.excellent ? 'excelente' : 
-               combinedScore > thresholds.good ? 'boa' : 
-               combinedScore > thresholds.acceptable ? 'aceitável' : 'ruim'
-    };
-  }
-
-  // Função para controlar flash
-  async function toggleFlash() {
-    if (!stream) return;
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      flashEnabled = !flashEnabled;
-      
-      if (flashEnabled) {
-        showStatusMessage('Ativando flash...', 'success');
-        
-        // Tenta múltiplas formas de ativar o flash
-        const flashStrategies = [
-          { torch: true },
-          { fillLightMode: 'flash' },
-          { fillLightMode: 'torch' },
-          { torch: true, fillLightMode: 'flash' }
-        ];
-        
-        let flashApplied = false;
-        
-        for (let i = 0; i < flashStrategies.length; i++) {
-          try {
-            console.log(`Tentativa ${i + 1} de flash:`, flashStrategies[i]);
-            
-            await track.applyConstraints({
-              advanced: [flashStrategies[i]]
-            });
-            
-            flashApplied = true;
-            console.log(`Flash aplicado com estratégia ${i + 1}`);
-            break;
-            
-          } catch (e) {
-            console.log(`Erro na estratégia de flash ${i + 1}:`, e);
-            continue;
-          }
-        }
-        
-        if (flashApplied) {
-          btnFlash.textContent = '💡 Flash ON';
-          btnFlash.style.background = 'linear-gradient(135deg,#f59e0b,#ef4444)';
-          showStatusMessage('Flash ativado!', 'success');
-        } else {
-          flashEnabled = false;
-          showStatusMessage('Flash não disponível nesta câmera', 'error');
-        }
-        
-      } else {
-        showStatusMessage('Desativando flash...', 'success');
-        
-        // Desativa o flash
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              torch: false,
-              fillLightMode: 'off'
-            }]
-          });
-        } catch (e) {
-          console.log('Erro ao desativar flash:', e);
-        }
-        
-        btnFlash.textContent = '💡 Flash';
-        btnFlash.style.background = '';
-        showStatusMessage('Flash desativado', 'success');
-      }
-      
-    } catch (e) {
-      console.log('Erro ao controlar flash:', e);
-      flashEnabled = false;
-      btnFlash.textContent = '💡 Flash';
-      btnFlash.style.background = '';
-      showStatusMessage('Flash não disponível nesta câmera', 'error');
-    }
-  }
-
-  // Função para foco agressivo com zoom
-  async function applyAggressiveFocus() {
-    if (!stream) {
-      showStatusMessage('Câmera não está ativa', 'error');
-      return;
-    }
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      focusIndicator.classList.add('focusing');
-      showStatusMessage('Aplicando foco agressivo...', 'success');
-      
-      // Estratégias específicas para celulares
-      const focusStrategies = isMobile ? [
-        // Para celulares: estratégias mais conservadoras
-        {
-          focusMode: 'continuous'
-        },
-        {
-          focusMode: 'single-shot'
-        },
-        {
-          focusMode: 'manual',
-          focusDistance: 0.1
-        },
-        {
-          focusMode: 'manual',
-          focusDistance: 0.2
-        }
-      ] : [
-        // Para computadores: estratégias mais agressivas
-        {
-          focusMode: 'manual',
-          focusDistance: 0.02
-        },
-        {
-          focusMode: 'manual',
-          focusDistance: 0.05
-        },
-        {
-          focusMode: 'manual',
-          focusDistance: 0.1
-        },
-        {
-          focusMode: 'single-shot'
-        },
-        {
-          focusMode: 'continuous'
-        }
-      ];
-      
-      let focusApplied = false;
-      
-      for (let i = 0; i < focusStrategies.length; i++) {
-        try {
-          console.log(`Tentativa de foco ${i + 1}:`, focusStrategies[i]);
-          
-          await track.applyConstraints({
-            advanced: [focusStrategies[i]]
-          });
-          
-          // Aguarda mais tempo em celulares para estabilização
-          const waitTime = isMobile ? 2000 : 1500;
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          
-          // Verifica a qualidade do foco
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, w, h);
-          const imageData = ctx.getImageData(0, 0, w, h);
-          
-          const focusQuality = detectFocusQuality(imageData);
-          console.log(`Qualidade com estratégia ${i + 1}:`, focusQuality);
-          
-          if (focusQuality.quality === 'excelente' || focusQuality.quality === 'boa') {
-            focusApplied = true;
-            showStatusMessage(`Foco aplicado com estratégia ${i + 1}! Qualidade: ${focusQuality.quality}`, 'success');
-            break;
-          }
-          
-        } catch (e) {
-          console.log(`Erro na estratégia de foco ${i + 1}:`, e);
-          continue;
-        }
-      }
-      
-      if (!focusApplied) {
-        showStatusMessage('Foco aplicado, mas qualidade pode não ser ideal', 'error');
-      }
-      
-      // Retorna para configurações normais após um tempo
-      setTimeout(async () => {
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-          console.log('Configurações normais restauradas');
-        } catch (e) {
-          console.log('Erro ao restaurar configurações:', e);
-        }
-        focusIndicator.classList.remove('focusing');
-      }, isMobile ? 10000 : 8000);
-      
-    } catch (e) {
-      console.log('Erro no foco agressivo:', e);
-      focusIndicator.classList.remove('focusing');
-      showStatusMessage('Erro no foco agressivo: ' + e.message, 'error');
-    }
-  }
-
-  // Função para foco manual preciso
-  async function applyPreciseManualFocus() {
-    if (!stream) {
-      showStatusMessage('Câmera não está ativa', 'error');
-      return;
-    }
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      focusIndicator.classList.add('focusing');
-      showStatusMessage('Aplicando foco manual preciso...', 'success');
-      
-      // Tenta diferentes distâncias de foco manual
-      const distances = [0.05, 0.1, 0.15, 0.2, 0.3, 0.5];
-      
-      for (let i = 0; i < distances.length; i++) {
-        const distance = distances[i];
-        try {
-          console.log(`Tentativa ${i + 1}: Foco manual com distância ${distance}`);
-          
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'manual',
-              focusDistance: distance
-            }]
-          });
-          
-          // Aguarda um pouco para o foco se estabilizar
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Verifica a qualidade do foco
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, w, h);
-          const imageData = ctx.getImageData(0, 0, w, h);
-          
-          const focusQuality = detectFocusQuality(imageData);
-          console.log(`Qualidade com distância ${distance}:`, focusQuality);
-          
-          if (focusQuality.quality === 'excelente' || focusQuality.quality === 'boa') {
-            manualFocusDistance = distance;
-            showStatusMessage(`Foco manual aplicado com distância ${distance}! Qualidade: ${focusQuality.quality}`, 'success');
-            break;
-          }
-          
-        } catch (e) {
-          console.log(`Erro na tentativa ${i + 1}:`, e);
-          continue;
-        }
-      }
-      
-      // Retorna para foco automático após um tempo
-      setTimeout(async () => {
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-          console.log('Foco automático reativado');
-        } catch (e) {
-          console.log('Erro ao reativar foco automático:', e);
-        }
-        focusIndicator.classList.remove('focusing');
-      }, 5000);
-      
-    } catch (e) {
-      console.log('Erro no foco manual preciso:', e);
-      focusIndicator.classList.remove('focusing');
-      showStatusMessage('Erro no foco manual: ' + e.message, 'error');
-    }
-  }
-
-  // Função para ajustar exposição (lidar com brilho)
-  async function adjustExposure() {
-    if (!stream) return;
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      showStatusMessage('Ajustando exposição...', 'success');
-      
-      // Tenta reduzir a exposição para lidar com brilho
-      await track.applyConstraints({
-        advanced: [{
-          exposureMode: 'manual',
-          exposureTime: 1000, // Tempo de exposição menor
-          brightness: 0.8, // Reduz brilho
-          contrast: 1.2 // Aumenta contraste
-        }]
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => console.log('SW registered'))
+          .catch(error => console.log('SW registration failed'));
       });
-      
-      console.log('Exposição ajustada');
-      showStatusMessage('Exposição ajustada para reduzir brilho', 'success');
-      
-      // Retorna para exposição automática após um tempo
-      setTimeout(async () => {
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              exposureMode: 'continuous'
-            }]
-          });
-        } catch (e) {
-          console.log('Erro ao retornar exposição automática:', e);
-        }
-      }, 5000);
-      
-    } catch (e) {
-      console.log('Erro ao ajustar exposição:', e);
-      showStatusMessage('Não foi possível ajustar exposição', 'error');
     }
-  }
-
-  // Função para foco automático
-  async function applyAutoFocus() {
-    if (!stream) return;
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      focusIndicator.classList.add('focusing');
-      showStatusMessage('Aplicando foco automático...', 'success');
-      
-      // Primeiro ajusta exposição
-      await adjustExposure();
-      
-      // Tenta diferentes modos de foco
-      const focusModes = ['continuous', 'single-shot', 'manual'];
-      
-      for (const mode of focusModes) {
-        if (cameraCapabilities.focusMode && cameraCapabilities.focusMode.includes(mode)) {
-          try {
-            await track.applyConstraints({
-              advanced: [{
-                focusMode: mode
-              }]
-            });
-            console.log('Foco aplicado com modo:', mode);
-            break;
-          } catch (e) {
-            console.log('Erro com modo de foco:', mode, e);
-          }
-        }
-      }
-      
-      setTimeout(() => {
-        focusIndicator.classList.remove('focusing');
-        showStatusMessage('Foco automático aplicado!', 'success');
-      }, 3000);
-      
-    } catch (e) {
-      console.log('Erro no foco automático:', e);
-      focusIndicator.classList.remove('focusing');
-      showStatusMessage('Erro no foco automático: ' + e.message, 'error');
-    }
-  }
-
-  // Função para melhorar configurações da câmera
-  async function optimizeCameraSettings(stream) {
-    if (!stream || !cameraCapabilities.focusMode) return;
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      const settings = {
-        video: {
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 30, min: 15 }
-        }
-      };
-
-      // Adiciona configurações de foco se disponível
-      if (cameraCapabilities.focusMode.includes('continuous')) {
-        settings.video.focusMode = { ideal: 'continuous' };
-      }
-      
-      if (cameraCapabilities.exposureMode.includes('continuous')) {
-        settings.video.exposureMode = { ideal: 'continuous' };
-      }
-      
-      if (cameraCapabilities.whiteBalanceMode.includes('continuous')) {
-        settings.video.whiteBalanceMode = { ideal: 'continuous' };
-      }
-
-      await track.applyConstraints(settings);
-      console.log('Configurações da câmera otimizadas');
-      
-    } catch (e) {
-      console.log('Erro ao otimizar configurações:', e);
-    }
-  }
-
-  async function startCamera(){
-    try{
-      // Detecta se é dispositivo móvel
-      isMobile = detectMobileDevice();
-      
-      // Configurações específicas para celulares
-      let constraints = {
-        video: {
-          facingMode: { ideal: 'environment' }, // Câmera traseira
-          width: { ideal: isMobile ? 1280 : 1920, min: isMobile ? 640 : 1280 },
-          height: { ideal: isMobile ? 720 : 1080, min: isMobile ? 480 : 720 },
-          frameRate: { ideal: 30, min: 15 }
-        },
-        audio: false
-      };
-
-      // Configurações específicas para iOS
-      if (isIOS) {
-        constraints.video = {
-          ...constraints.video,
-          facingMode: 'environment',
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 }
-        };
-      }
-
-      // Configurações específicas para Android
-      if (isAndroid) {
-        constraints.video = {
-          ...constraints.video,
-          facingMode: 'environment',
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 }
-        };
-      }
-
-      console.log('Iniciando câmera com configurações:', constraints);
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      // Detecta capacidades da câmera
-      await detectCameraCapabilities(stream);
-      
-      // Aplica configurações específicas para celulares
-      await applyMobileOptimizedSettings(stream);
-      
-      video.srcObject = stream;
-      
-      // Aguarda o vídeo carregar
-      await new Promise((resolve) => {
-        video.onloadedmetadata = resolve;
-      });
-      
-      await video.play();
-      
-      // Mostra indicador de foco
-      focusIndicator.classList.add('active');
-      
-      btnShot.disabled = false;
-      btnStop.disabled = false;
-      btnFocus.disabled = false;
-      btnAutoFocus.disabled = false;
-      btnUltraFocus.disabled = false;
-      btnAggressiveFocus.disabled = false;
-      btnForceFocus.disabled = false;
-      btnManualFocus.disabled = false;
-      btnExposure.disabled = false;
-      btnFlash.disabled = !cameraCapabilities.torch && !cameraCapabilities.fillLightMode;
-      btnReset.disabled = false;
-      btnStart.disabled = true;
-      
-      // Inicia monitoramento de foco
-      startFocusMonitoring();
-      
-      const deviceType = isMobile ? 'celular' : 'computador';
-      const platform = isIOS ? 'iOS' : isAndroid ? 'Android' : 'desktop';
-      setStatus(`Câmera ligada (${deviceType} - ${platform}). Use "Foco Ultra" para melhor resultado.`);
-      showStatusMessage(`Câmera ativada no ${deviceType} (${platform})! Use "Foco Ultra" para melhor qualidade.`, 'success');
-      
-      // Adiciona eventos de toque para foco (especialmente importante em celulares)
-      video.addEventListener('click', (e) => {
-        preciseTouchFocus(e.clientX, e.clientY);
-      });
-      
-      // Adiciona evento de toque no indicador de foco
-      focusIndicator.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const rect = video.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        preciseTouchFocus(centerX, centerY);
-      });
-      
-      // Adiciona eventos de toque para celulares
-      if (isMobile) {
-        video.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          const touch = e.touches[0];
-          preciseTouchFocus(touch.clientX, touch.clientY);
-        });
-        
-        focusIndicator.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const rect = video.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          preciseTouchFocus(centerX, centerY);
-        });
-      }
-      
-      // Adiciona dicas específicas para celulares
-      setTimeout(() => {
-        if (focusIndicator.classList.contains('active')) {
-          if (isMobile) {
-            showStatusMessage('📱 Dica: Use "Foco Ultra" e mantenha o celular estável!', 'success');
-          } else {
-            showStatusMessage('💡 Dica: Use "Foco Ultra" para melhor resultado!', 'success');
-          }
-        }
-      }, 3000);
-      
-    }catch(e){
-      console.error('Erro na câmera:', e);
-      showStatusMessage('Erro ao acessar câmera: ' + e.message, 'error');
-      
-      // Tenta configuração mais simples se falhar
-      try {
-        console.log('Tentando configuração alternativa...');
-        stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' }, 
-          audio: false 
-        });
-        
-        video.srcObject = stream;
-        await video.play();
-        
-        btnShot.disabled = false;
-        btnStop.disabled = false;
-        btnFocus.disabled = false;
-        btnAutoFocus.disabled = false;
-        btnUltraFocus.disabled = false;
-        btnAggressiveFocus.disabled = false;
-        btnForceFocus.disabled = false;
-        btnManualFocus.disabled = false;
-        btnExposure.disabled = false;
-        btnFlash.disabled = false;
-        btnReset.disabled = false;
-        btnStart.disabled = true;
-        
-        setStatus('Câmera ligada (modo básico)');
-        showStatusMessage('Câmera ativada em modo básico. O foco pode não funcionar automaticamente.', 'error');
-        
-      } catch (e2) {
-        alert('Não foi possível acessar a câmera: ' + e2.message);
-      }
-    }
-  }
-
-  // Função para aplicar configurações otimizadas para celulares
-  async function applyMobileOptimizedSettings(stream) {
-    if (!stream) return;
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      const settings = {
-        video: {
-          width: { ideal: isMobile ? 1280 : 1920, min: isMobile ? 640 : 1280 },
-          height: { ideal: isMobile ? 720 : 1080, min: isMobile ? 480 : 720 },
-          frameRate: { ideal: 30, min: 15 }
-        }
-      };
-
-      // Configurações específicas para celulares
-      if (isMobile) {
-        // Em celulares, prioriza foco automático
-        if (cameraCapabilities.focusMode && cameraCapabilities.focusMode.includes('continuous')) {
-          settings.video.focusMode = { ideal: 'continuous' };
-        }
-        
-        // Configurações de exposição para celulares
-        if (cameraCapabilities.exposureMode && cameraCapabilities.exposureMode.includes('continuous')) {
-          settings.video.exposureMode = { ideal: 'continuous' };
-        }
-        
-        // Configurações de white balance para celulares
-        if (cameraCapabilities.whiteBalanceMode && cameraCapabilities.whiteBalanceMode.includes('continuous')) {
-          settings.video.whiteBalanceMode = { ideal: 'continuous' };
-        }
-      }
-
-      await track.applyConstraints(settings);
-      console.log('Configurações otimizadas para celular aplicadas');
-      
-    } catch (e) {
-      console.log('Erro ao aplicar configurações otimizadas:', e);
-    }
-  }
-  
-  function stopCamera(){
-    if(stream){
-      stream.getTracks().forEach(t => t.stop());
-    }
-    focusIndicator.classList.remove('active', 'focusing');
-    focusIndicator.style.borderColor = '';
-    focusIndicator.style.boxShadow = '';
-    btnStart.disabled = false;
-    btnShot.disabled = true;
-    btnStop.disabled = true;
-    btnFocus.disabled = true;
-    btnAutoFocus.disabled = true;
-    btnUltraFocus.disabled = true;
-    btnAggressiveFocus.disabled = true;
-    btnForceFocus.disabled = true; // Adicionado
-    btnManualFocus.disabled = true;
-    btnExposure.disabled = true;
-    btnFlash.disabled = true;
-    btnReset.disabled = true;
-    setStatus('Câmera desligada');
-    hideStatusMessage();
-    
-    // Para o monitoramento de foco
-    stopFocusMonitoring();
-  }
-
-  btnStart.onclick = startCamera;
-  btnStop.onclick = stopCamera;
-  btnFocus.onclick = () => {
-    const rect = video.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    applyManualFocus(centerX, centerY);
-  };
-  btnAutoFocus.onclick = applyAutoFocus;
-  btnUltraFocus.onclick = ultraAggressiveFocus;
-  btnAggressiveFocus.onclick = applyAggressiveFocus;
-  btnForceFocus.onclick = forceFocus; // Adicionado
-  btnManualFocus.onclick = applyPreciseManualFocus;
-  btnExposure.onclick = adjustExposure;
-  btnFlash.onclick = toggleFlash;
-  btnReset.onclick = () => {
-    stopCamera();
-    startCamera();
-    showStatusMessage('Câmera resetada e reiniciada.', 'success');
-  };
-
-  // ==== OCR melhorado com Tesseract ====
-  async function grabAndOcr(){
-    if(!video.srcObject) return;
-    
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    canvas.width = w;
-    canvas.height = h;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, w, h);
-    
-    // Verifica qualidade do foco antes de processar
-    const imageData = ctx.getImageData(0, 0, w, h);
-    const focusQuality = detectFocusQuality(imageData);
-    
-    if (!focusQuality.isFocused) {
-      showStatusMessage('Imagem muito desfocada! Use os botões de foco primeiro.', 'error');
-      setStatus('Foque a imagem antes de capturar');
-      return;
-    }
-    
-    showStatusMessage(`Qualidade do foco: ${focusQuality.quality}. Processando...`, 'success');
-    
-    // Melhora a imagem antes do OCR
-    const data = imageData.data;
-    
-    // Aplica filtros para melhorar o reconhecimento
-    for (let i = 0; i < data.length; i += 4) {
-      const gray = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      const threshold = 128;
-      const binary = gray > threshold ? 255 : 0;
-      data[i] = data[i + 1] = data[i + 2] = binary;
-    }
-    
-    ctx.putImageData(imageData, 0, 0);
-    const dataUrl = canvas.toDataURL('image/png');
-
-    setStatus('Lendo imagem…');
-    setProgress(5);
-    showStatusMessage('Processando imagem com OCR...', 'success');
-    
-    try {
-      const worker = await Tesseract.createWorker({
-        logger: m => {
-          if(m.status && m.progress != null){
-            setStatus(m.status);
-            setProgress(Math.round(m.progress * 100));
-          }
-        }
-      });
-      
-      await worker.load();
-      await worker.loadLanguage('por');
-      await worker.initialize('por');
-      
-      // Configurações específicas para melhorar reconhecimento de números
-      await worker.setParameters({
-        tessedit_char_whitelist: '0123456789.-',
-        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
-        preserve_interword_spaces: '1'
-      });
-      
-      const { data: { text } } = await worker.recognize(dataUrl);
-      await worker.terminate();
-
-      const candidates = extractCpfCandidates(text);
-      
-      if(candidates.length > 0){
-        // Prioriza CPFs válidos
-        const validFirst = candidates.sort((a,b) => {
-          const aValid = cpfCheckDigits(a);
-          const bValid = cpfCheckDigits(b);
-          if (aValid && !bValid) return -1;
-          if (!aValid && bValid) return 1;
-          return 0;
-        });
-        
-        const picked = validFirst[0];
-        setCPF(picked);
-        
-        if (cpfCheckDigits(picked)) {
-          setStatus('CPF válido detectado! Revise e gere o código.');
-          showStatusMessage('CPF válido encontrado: ' + formatCPF(picked), 'success');
-        } else {
-          setStatus('CPF detectado (pode precisar de correção).');
-          showStatusMessage('CPF detectado, mas verifique se está correto: ' + formatCPF(picked), 'error');
-        }
-      } else {
-        setStatus('Não encontrei um CPF claro. Tente aproximar, melhorar a luz ou digitar manualmente.');
-        showStatusMessage('Nenhum CPF encontrado na imagem. Tente melhorar o foco ou a iluminação.', 'error');
-      }
-      
-    } catch (error) {
-      console.error('Erro no OCR:', error);
-      setStatus('Erro ao processar imagem');
-      showStatusMessage('Erro no processamento OCR: ' + error.message, 'error');
-    }
-    
-    setProgress(0);
-  }
-
-  function extractCpfCandidates(text){
-    console.log('Texto extraído:', text);
-    
-    // Limpa o texto
-    const cleanText = (text || '').replace(/[Oo]/g, '0').replace(/[lI]/g, '1');
-    
-    // Padrões para CPF
-    const patterns = [
-      // CPF com formatação: 123.456.789-01
-      /\b\d{3}[\.\s]?\d{3}[\.\s]?\d{3}[-\s]?\d{2}\b/g,
-      // CPF sem formatação: 12345678901
-      /\b\d{11}\b/g,
-      // CPF parcial com formatação
-      /\b\d{3}[\.\s]?\d{3}[\.\s]?\d{3}\b/g
-    ];
-    
-    const candidates = new Set();
-    
-    patterns.forEach(pattern => {
-      const matches = cleanText.match(pattern) || [];
-      matches.forEach(match => {
-        const digits = onlyDigits(match);
-        if (digits.length === 11) {
-          candidates.add(digits);
-        }
-      });
-    });
-    
-    // Busca por sequências de 11 dígitos consecutivos
-    const allDigits = cleanText.match(/\d/g)?.join('') || '';
-    for (let i = 0; i + 11 <= allDigits.length; i++) {
-      const seq = allDigits.slice(i, i + 11);
-      if (seq.length === 11) {
-        candidates.add(seq);
-      }
-    }
-    
-    const result = Array.from(candidates).filter(s => s.length === 11);
-    console.log('Candidatos encontrados:', result);
-    return result;
-  }
-
-  function setStatus(msg){ statusEl.textContent = msg; }
-  function setProgress(v){ pbar.style.width = Math.max(0, Math.min(100, v)) + '%'; }
-  
-  function showStatusMessage(message, type = 'success') {
-    statusMessage.textContent = message;
-    statusMessage.className = `status-message ${type}`;
-    statusMessage.style.display = 'block';
-  }
-  
-  function hideStatusMessage() {
-    statusMessage.style.display = 'none';
-  }
-
-  const btnOcr = document.getElementById('btnShot');
-  btnOcr.onclick = grabAndOcr;
-
-  // ==== Campo CPF, validação e barcode ====
-  const cpfInput = document.getElementById('cpf');
-  const badge = document.getElementById('validBadge');
-  const btnValidate = document.getElementById('btnValidate');
-  const symSel = document.getElementById('symbology');
-
-  function setCPF(v){ cpfInput.value = formatCPF(v); }
-  cpfInput.addEventListener('input', ()=> { 
-    cpfInput.value = formatCPF(cpfInput.value); 
-    badge.className='badge muted'; 
-    badge.textContent='CPF não verificado'; 
-  });
-
-  function markValid(ok){
-    if(ok){ 
-      badge.className='badge ok'; 
-      badge.textContent='CPF válido'; 
-    } else { 
-      badge.className='badge bad'; 
-      badge.textContent='CPF inválido'; 
-    }
-  }
-
-  function generateBarcode(){
-    const val = onlyDigits(cpfInput.value);
-    const type = symSel.value;
-    
-    if(!val || val.length !== 11){
-      markValid(false);
-      showStatusMessage('Informe um CPF com 11 dígitos.', 'error');
-      return;
-    }
-    
-    const ok = cpfCheckDigits(val);
-    markValid(ok);
-    
-    if(!ok){
-      showStatusMessage('CPF inválido pelo cálculo dos dígitos verificadores. Corrija antes de gerar.', 'error');
-      return;
-    }
-    
-    try{
-      JsBarcode('#barcode', val, { 
-        format: type, 
-        displayValue: true, 
-        fontSize: 16, 
-        margin: 10,
-        background: '#ffffff',
-        lineColor: '#000000'
-      });
-      document.getElementById('btnDownload').disabled = false;
-      showStatusMessage('Código de barras gerado com sucesso!', 'success');
-    }catch(e){
-      showStatusMessage('Erro ao gerar código: ' + e.message, 'error');
-    }
-  }
-
-  btnValidate.onclick = generateBarcode;
-
-  // ==== Download do SVG como PNG ====
-  const btnDownload = document.getElementById('btnDownload');
-  btnDownload.onclick = () => {
-    const svg = document.getElementById('barcode');
-    const xml = new XMLSerializer().serializeToString(svg);
-    const svg64 = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      c.width = img.width * 2; // Aumenta a resolução
-      c.height = img.height * 2;
-      const ctx = c.getContext('2d');
-      ctx.scale(2, 2); // Escala para melhor qualidade
-      ctx.drawImage(img, 0, 0);
-      const link = document.createElement('a');
-      link.download = `barcode_cpf_${onlyDigits(cpfInput.value)}.png`;
-      link.href = c.toDataURL('image/png');
-      link.click();
-      showStatusMessage('Código de barras baixado com sucesso!', 'success');
-    };
-    img.src = svg64;
-  };
-
-  // ==== Service Worker registration ====
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(registration => {
-          console.log('SW registrado:', registration);
-        })
-        .catch(error => {
-          console.error('Erro no SW:', error);
-        });
-    });
-  }
-
-  // Função para verificação contínua de foco
-  function startFocusMonitoring() {
-    if (focusCheckInterval) {
-      clearInterval(focusCheckInterval);
-    }
-    
-    focusCheckInterval = setInterval(() => {
-      if (!video.srcObject || !video.videoWidth) return;
-      
-      try {
-        const w = video.videoWidth;
-        const h = video.videoHeight;
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, w, h);
-        const imageData = ctx.getImageData(0, 0, w, h);
-        
-        const focusQuality = detectFocusQuality(imageData);
-        
-        // Atualiza o indicador visual baseado na qualidade
-        if (focusQuality.quality === 'excelente') {
-          focusIndicator.style.borderColor = '#22c55e';
-          focusIndicator.style.boxShadow = '0 0 15px rgba(34,197,94,0.3)';
-        } else if (focusQuality.quality === 'boa') {
-          focusIndicator.style.borderColor = '#f59e0b';
-          focusIndicator.style.boxShadow = '0 0 15px rgba(245,158,11,0.3)';
-        } else if (focusQuality.quality === 'aceitável') {
-          focusIndicator.style.borderColor = '#ef4444';
-          focusIndicator.style.boxShadow = '0 0 15px rgba(239,68,68,0.3)';
-        } else {
-          focusIndicator.style.borderColor = '#6b7280';
-          focusIndicator.style.boxShadow = 'none';
-        }
-        
-        // Atualiza o status se a qualidade mudou significativamente
-        if (focusQuality.isFocused && !btnShot.disabled) {
-          setStatus(`Foco ${focusQuality.quality} - Pronto para capturar`);
-        }
-        
-      } catch (e) {
-        console.log('Erro na verificação de foco:', e);
-      }
-    }, 1000); // Verifica a cada segundo
-  }
-  
-  function stopFocusMonitoring() {
-    if (focusCheckInterval) {
-      clearInterval(focusCheckInterval);
-      focusCheckInterval = null;
-    }
-  }
-
-  // Função para aplicar foco manual (toque na tela)
-  async function applyManualFocus(x, y) {
-    if (!stream) {
-      showStatusMessage('Câmera não está ativa', 'error');
-      return;
-    }
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      // Mostra animação de foco
-      focusIndicator.classList.add('focusing');
-      showStatusMessage('Aplicando foco...', 'success');
-      
-      // Calcula a posição relativa (0-1)
-      const rect = video.getBoundingClientRect();
-      const relativeX = (x - rect.left) / rect.width;
-      const relativeY = (y - rect.top) / rect.height;
-      
-      console.log('Aplicando foco em:', relativeX, relativeY);
-      
-      // Tenta múltiplas estratégias de foco
-      const focusStrategies = [
-        // Estratégia 1: Foco manual com distância próxima
-        {
-          focusMode: 'manual',
-          focusDistance: 0.05,
-          pointsOfInterest: [{ x: relativeX, y: relativeY }]
-        },
-        // Estratégia 2: Foco manual com distância média
-        {
-          focusMode: 'manual',
-          focusDistance: 0.2,
-          pointsOfInterest: [{ x: relativeX, y: relativeY }]
-        },
-        // Estratégia 3: Foco automático single-shot
-        {
-          focusMode: 'single-shot',
-          pointsOfInterest: [{ x: relativeX, y: relativeY }]
-        }
-      ];
-      
-      let focusApplied = false;
-      
-      for (let i = 0; i < focusStrategies.length; i++) {
-        try {
-          console.log(`Tentativa ${i + 1}:`, focusStrategies[i]);
-          
-          await track.applyConstraints({
-            advanced: [focusStrategies[i]]
-          });
-          
-          focusApplied = true;
-          console.log(`Foco aplicado com estratégia ${i + 1}`);
-          break;
-          
-        } catch (e) {
-          console.log(`Erro na estratégia ${i + 1}:`, e);
-          continue;
-        }
-      }
-      
-      if (!focusApplied) {
-        // Última tentativa: configurações básicas
-        try {
-          await track.applyConstraints({
-            video: {
-              focusMode: 'continuous',
-              exposureMode: 'continuous'
-            }
-          });
-          console.log('Aplicado foco contínuo como fallback');
-        } catch (e) {
-          console.log('Erro no fallback:', e);
-        }
-      }
-      
-      showStatusMessage('Foco aplicado! Aguarde a estabilização...', 'success');
-      
-      // Verifica qualidade do foco após um tempo
-      setTimeout(async () => {
-        try {
-          // Captura frame para análise
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, w, h);
-          const imageData = ctx.getImageData(0, 0, w, h);
-          
-          const focusQuality = detectFocusQuality(imageData);
-          console.log('Qualidade do foco:', focusQuality);
-          
-          if (focusQuality.isFocused) {
-            showStatusMessage(`Foco ${focusQuality.quality}! Imagem pronta para captura.`, 'success');
-          } else {
-            showStatusMessage('Foco ainda não ideal. Tente novamente ou ajuste a distância.', 'error');
-          }
-          
-          // Retorna para foco automático
-          try {
-            await track.applyConstraints({
-              advanced: [{
-                focusMode: 'continuous'
-              }]
-            });
-            console.log('Foco automático reativado');
-          } catch (e) {
-            console.log('Erro ao reativar foco automático:', e);
-          }
-          
-          focusIndicator.classList.remove('focusing');
-          
-        } catch (e) {
-          console.log('Erro ao verificar foco:', e);
-          focusIndicator.classList.remove('focusing');
-        }
-      }, 4000); // Aumentei o tempo para 4 segundos
-      
-    } catch (e) {
-      console.log('Erro ao aplicar foco manual:', e);
-      focusIndicator.classList.remove('focusing');
-      showStatusMessage('Erro ao aplicar foco: ' + e.message, 'error');
-    }
-  }
-
-  // Função para forçar foco usando abordagem alternativa
-  async function forceFocus() {
-    if (!stream) {
-      showStatusMessage('Câmera não está ativa', 'error');
-      return;
-    }
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      focusIndicator.classList.add('focusing');
-      showStatusMessage('Forçando foco...', 'success');
-      
-      // Estratégias específicas para celulares
-      const forceStrategies = isMobile ? [
-        // Para celulares: estratégias mais conservadoras e estáveis
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'single-shot'
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'manual',
-              focusDistance: 0.1
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'manual',
-              focusDistance: 0.2
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'manual',
-              focusDistance: 0.3
-            }]
-          });
-        }
-      ] : [
-        // Para computadores: estratégias mais agressivas
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'manual',
-              focusDistance: 0.01
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'manual',
-              focusDistance: 0.05
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'single-shot'
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-        },
-        async () => {
-          await track.applyConstraints({
-            advanced: [{
-              zoom: 1.5,
-              focusMode: 'manual',
-              focusDistance: 0.1
-            }]
-          });
-        }
-      ];
-      
-      let focusSuccess = false;
-      
-      for (let i = 0; i < forceStrategies.length; i++) {
-        try {
-          console.log(`Forçando foco - método ${i + 1}`);
-          
-          await forceStrategies[i]();
-          
-          // Aguarda mais tempo em celulares para estabilização
-          const waitTime = isMobile ? 2500 : 2000;
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-          
-          // Verifica qualidade
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, w, h);
-          const imageData = ctx.getImageData(0, 0, w, h);
-          
-          const focusQuality = detectFocusQuality(imageData);
-          console.log(`Qualidade método ${i + 1}:`, focusQuality);
-          
-          if (focusQuality.isFocused) {
-            focusSuccess = true;
-            showStatusMessage(`Foco forçado com sucesso! Método ${i + 1}. Qualidade: ${focusQuality.quality}`, 'success');
-            break;
-          }
-          
-        } catch (e) {
-          console.log(`Erro no método ${i + 1}:`, e);
-          continue;
-        }
-      }
-      
-      if (!focusSuccess) {
-        showStatusMessage('Foco forçado aplicado, mas qualidade pode variar', 'error');
-      }
-      
-      // Restaura configurações após um tempo
-      setTimeout(async () => {
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-        } catch (e) {
-          console.log('Erro ao restaurar configurações:', e);
-        }
-        focusIndicator.classList.remove('focusing');
-      }, isMobile ? 12000 : 10000);
-      
-    } catch (e) {
-      console.log('Erro ao forçar foco:', e);
-      focusIndicator.classList.remove('focusing');
-      showStatusMessage('Erro ao forçar foco: ' + e.message, 'error');
-    }
-  }
-
-  // Função ultra-agressiva para foco em celulares
-  async function ultraAggressiveFocus() {
-    if (!stream) {
-      showStatusMessage('Câmera não está ativa', 'error');
-      return;
-    }
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      focusIndicator.classList.add('focusing');
-      showStatusMessage('Aplicando foco ultra-agressivo para celular...', 'success');
-      
-      // Estratégias específicas por plataforma
-      let focusStrategies = [];
-      
-      if (isIOS) {
-        // iOS: estratégias mais conservadoras
-        focusStrategies = [
-          { focusMode: 'continuous' },
-          { focusMode: 'single-shot' },
-          { focusMode: 'manual', focusDistance: 0.1 },
-          { focusMode: 'manual', focusDistance: 0.2 },
-          { focusMode: 'manual', focusDistance: 0.3 },
-          { focusMode: 'manual', focusDistance: 0.5 }
-        ];
-      } else if (isAndroid) {
-        // Android: estratégias mais agressivas
-        focusStrategies = [
-          { focusMode: 'continuous' },
-          { focusMode: 'single-shot' },
-          { focusMode: 'manual', focusDistance: 0.05 },
-          { focusMode: 'manual', focusDistance: 0.1 },
-          { focusMode: 'manual', focusDistance: 0.15 },
-          { focusMode: 'manual', focusDistance: 0.2 },
-          { focusMode: 'manual', focusDistance: 0.3 },
-          { focusMode: 'manual', focusDistance: 0.5 }
-        ];
-      } else {
-        // Outros dispositivos
-        focusStrategies = [
-          { focusMode: 'continuous' },
-          { focusMode: 'single-shot' },
-          { focusMode: 'manual', focusDistance: 0.1 },
-          { focusMode: 'manual', focusDistance: 0.2 }
-        ];
-      }
-      
-      let bestFocusQuality = { score: 0, quality: 'ruim' };
-      let bestStrategy = null;
-      
-      // Testa todas as estratégias e encontra a melhor
-      for (let i = 0; i < focusStrategies.length; i++) {
-        try {
-          console.log(`Testando estratégia ${i + 1}:`, focusStrategies[i]);
-          
-          await track.applyConstraints({
-            advanced: [focusStrategies[i]]
-          });
-          
-          // Aguarda estabilização
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          
-          // Verifica qualidade
-          const w = video.videoWidth;
-          const h = video.videoHeight;
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, w, h);
-          const imageData = ctx.getImageData(0, 0, w, h);
-          
-          const focusQuality = detectFocusQuality(imageData);
-          console.log(`Qualidade estratégia ${i + 1}:`, focusQuality);
-          
-          if (focusQuality.score > bestFocusQuality.score) {
-            bestFocusQuality = focusQuality;
-            bestStrategy = focusStrategies[i];
-          }
-          
-          // Se encontrou foco excelente, para
-          if (focusQuality.quality === 'excelente') {
-            bestFocusQuality = focusQuality;
-            bestStrategy = focusStrategies[i];
-            break;
-          }
-          
-        } catch (e) {
-          console.log(`Erro na estratégia ${i + 1}:`, e);
-          continue;
-        }
-      }
-      
-      // Aplica a melhor estratégia encontrada
-      if (bestStrategy) {
-        try {
-          await track.applyConstraints({
-            advanced: [bestStrategy]
-          });
-          
-          currentFocusMode = bestStrategy.focusMode;
-          showStatusMessage(`Melhor foco aplicado: ${bestStrategy.focusMode} (${bestFocusQuality.quality})`, 'success');
-          
-        } catch (e) {
-          console.log('Erro ao aplicar melhor estratégia:', e);
-        }
-      }
-      
-      // Restaura foco automático após um tempo
-      setTimeout(async () => {
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-          currentFocusMode = 'continuous';
-          console.log('Foco automático restaurado');
-        } catch (e) {
-          console.log('Erro ao restaurar foco automático:', e);
-        }
-        focusIndicator.classList.remove('focusing');
-      }, 15000);
-      
-    } catch (e) {
-      console.log('Erro no foco ultra-agressivo:', e);
-      focusIndicator.classList.remove('focusing');
-      showStatusMessage('Erro no foco ultra-agressivo: ' + e.message, 'error');
-    }
-  }
-
-  // Função para foco por toque preciso
-  async function preciseTouchFocus(x, y) {
-    if (!stream) return;
-    
-    const track = stream.getVideoTracks()[0];
-    if (!track) return;
-
-    try {
-      // Calcula posição relativa
-      const rect = video.getBoundingClientRect();
-      const relativeX = (x - rect.left) / rect.width;
-      const relativeY = (y - rect.top) / rect.height;
-      
-      console.log('Foco por toque em:', relativeX, relativeY);
-      
-      // Aplica foco no ponto específico
-      await track.applyConstraints({
-        advanced: [{
-          focusMode: 'manual',
-          focusDistance: 0.1,
-          pointsOfInterest: [{ x: relativeX, y: relativeY }]
-        }]
-      });
-      
-      showStatusMessage('Foco aplicado no ponto tocado!', 'success');
-      
-      // Retorna para foco automático após um tempo
-      setTimeout(async () => {
-        try {
-          await track.applyConstraints({
-            advanced: [{
-              focusMode: 'continuous'
-            }]
-          });
-        } catch (e) {
-          console.log('Erro ao restaurar foco automático:', e);
-        }
-      }, 5000);
-      
-    } catch (e) {
-      console.log('Erro no foco por toque:', e);
-    }
-  }
-</script>
+  </script>
 </body>
 </html>
+

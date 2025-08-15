@@ -1,0 +1,268 @@
+/* Dark Theme Styles */
+
+.theme-dark {
+  /* Colors already defined in variables.css for dark theme */
+  color-scheme: dark;
+}
+
+/* Dark theme specific overrides */
+.theme-dark .camera-container {
+  background: #000000;
+}
+
+.theme-dark .barcode-container {
+  background: #ffffff;
+  color: #000000;
+}
+
+.theme-dark .barcode-svg {
+  filter: none;
+}
+
+/* Dark theme form elements */
+.theme-dark .form-input::-webkit-input-placeholder {
+  color: var(--text-muted);
+}
+
+.theme-dark .form-input::-moz-placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.theme-dark .form-input:-ms-input-placeholder {
+  color: var(--text-muted);
+}
+
+.theme-dark .form-input::-ms-input-placeholder {
+  color: var(--text-muted);
+}
+
+/* Dark theme scrollbars */
+.theme-dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.theme-dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.theme-dark ::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border-radius: var(--radius-full);
+}
+
+.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary-hover);
+}
+
+/* Dark theme selection */
+.theme-dark ::selection {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+/* Dark theme focus styles */
+.theme-dark :focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.theme-dark :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Dark theme media queries */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.theme-light) {
+    /* Dark theme variables are already set as default in variables.css */
+  }
+}
+
+/* Dark theme specific animations */
+.theme-dark .scan-line {
+  background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+.theme-dark .corner {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 5px var(--color-accent);
+}
+
+/* Dark theme loading screen */
+.theme-dark .loading-screen {
+  background: var(--bg-primary);
+}
+
+.theme-dark .loading-spinner {
+  border-color: var(--border-primary);
+  border-top-color: var(--color-primary);
+}
+
+/* Dark theme toast styles */
+.theme-dark .toast {
+  background: var(--bg-card);
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Dark theme modal styles */
+.theme-dark .modal {
+  background: var(--bg-overlay);
+}
+
+.theme-dark .modal-content {
+  background: var(--bg-card);
+  border-color: var(--border-primary);
+  box-shadow: var(--shadow-2xl);
+}
+
+/* Dark theme button hover effects */
+.theme-dark .btn-primary:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.theme-dark .btn-accent:hover {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+/* Dark theme card hover effects */
+.theme-dark .card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.theme-dark .card-elevated:hover {
+  box-shadow: var(--shadow-2xl);
+}
+
+/* Dark theme quick action cards */
+.theme-dark .quick-action-card.active {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+}
+
+/* Dark theme status badges */
+.theme-dark .status-valid {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.theme-dark .status-invalid {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.theme-dark .status-processing {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+/* Dark theme progress bar */
+.theme-dark .progress-bar {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+}
+
+.theme-dark .progress-fill {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+/* Dark theme camera overlay */
+.theme-dark .camera-hint {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.theme-dark .scan-frame {
+  border-color: var(--color-primary);
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Dark theme history items */
+.theme-dark .history-item:hover {
+  border-color: var(--color-primary);
+  background: var(--bg-secondary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+}
+
+.theme-dark .history-item-icon {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--color-primary);
+}
+
+/* Dark theme empty state */
+.theme-dark .empty-state {
+  color: var(--text-tertiary);
+}
+
+.theme-dark .empty-icon {
+  opacity: 0.3;
+}
+
+/* Dark theme form validation */
+.theme-dark .form-input.error {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.theme-dark .form-input.success {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Dark theme search box */
+.theme-dark .search-box .form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Dark theme settings sections */
+.theme-dark .settings-section h3 {
+  border-bottom-color: var(--border-primary);
+}
+
+/* Dark theme info items */
+.theme-dark .info-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+/* Dark theme panel headers */
+.theme-dark .panel-header {
+  background: var(--bg-secondary);
+  border-bottom-color: var(--border-primary);
+}
+
+/* Dark theme footer */
+.theme-dark .footer {
+  background: var(--bg-card);
+  border-top-color: var(--border-primary);
+}
+
+/* Dark theme header */
+.theme-dark .header {
+  background: var(--bg-card);
+  border-bottom-color: var(--border-primary);
+  backdrop-filter: blur(10px);
+}
+
+/* Dark theme logo */
+.theme-dark .logo-icon {
+  color: var(--color-primary);
+}
+
+/* Dark theme button icons */
+.theme-dark .btn-icon:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
