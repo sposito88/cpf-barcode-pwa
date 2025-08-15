@@ -88,15 +88,18 @@
           <button id="btnAutoFocus" class="ghost" disabled>🔄 Auto Foco</button>
         </div>
         <div class="row">
+          <button id="btnUltraFocus" class="primary" disabled>🚀 Foco Ultra</button>
           <button id="btnAggressiveFocus" class="primary" disabled>⚡ Foco Agressivo</button>
+        </div>
+        <div class="row">
           <button id="btnForceFocus" class="primary" disabled>🔥 Forçar Foco</button>
-        </div>
-        <div class="row">
           <button id="btnManualFocus" class="ghost" disabled>📏 Foco Manual</button>
-          <button id="btnExposure" class="ghost" disabled>☀️ Ajustar Exposição</button>
         </div>
         <div class="row">
+          <button id="btnExposure" class="ghost" disabled>☀️ Ajustar Exposição</button>
           <button id="btnFlash" class="ghost" disabled>💡 Flash</button>
+        </div>
+        <div class="row">
           <button id="btnReset" class="ghost" disabled>🔄 Reset Câmera</button>
         </div>
         <div class="hint">Dica: aponte para um documento ou texto que contenha o CPF. Boa luz ajuda o OCR.</div>
@@ -195,6 +198,7 @@
   const btnStop  = document.getElementById('btnStop');
   const btnFocus = document.getElementById('btnFocus');
   const btnAutoFocus = document.getElementById('btnAutoFocus');
+  const btnUltraFocus = document.getElementById('btnUltraFocus');
   const btnAggressiveFocus = document.getElementById('btnAggressiveFocus');
   const btnForceFocus = document.getElementById('btnForceFocus'); // Adicionado
   const btnManualFocus = document.getElementById('btnManualFocus');
@@ -210,14 +214,26 @@
   let cameraCapabilities = {};
   let focusCheckInterval = null;
   let flashEnabled = false;
-  let manualFocusDistance = 0.1; // Distância inicial do foco manual
+  let manualFocusDistance = 0.1;
   let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  let isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  let isAndroid = /Android/i.test(navigator.userAgent);
+  let currentFocusMode = 'continuous';
   
   // Função para detectar se é dispositivo móvel
   function detectMobileDevice() {
     const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    console.log('Dispositivo móvel detectado:', mobile, 'Touch:', touch);
+    const userAgent = navigator.userAgent.toLowerCase();
+    
+    console.log('Detecção de dispositivo:', {
+      mobile: mobile,
+      touch: touch,
+      userAgent: userAgent,
+      isIOS: isIOS,
+      isAndroid: isAndroid
+    });
+    
     return mobile && touch;
   }
   
@@ -227,16 +243,22 @@
       const track = stream.getVideoTracks()[0];
       try {
         const capabilities = track.getCapabilities();
+        const settings = track.getSettings();
+        
         cameraCapabilities = {
           focusMode: capabilities.focusMode || [],
           exposureMode: capabilities.exposureMode || [],
           whiteBalanceMode: capabilities.whiteBalanceMode || [],
           zoom: capabilities.zoom || { min: 1, max: 1 },
           torch: capabilities.torch || false,
-          fillLightMode: capabilities.fillLightMode || []
+          fillLightMode: capabilities.fillLightMode || [],
+          currentSettings: settings
         };
+        
         console.log('Capacidades da câmera:', cameraCapabilities);
-        console.log('Dispositivo móvel:', isMobile);
+        console.log('Configurações atuais:', settings);
+        console.log('Dispositivo móvel:', isMobile, 'iOS:', isIOS, 'Android:', isAndroid);
+        
         return capabilities;
       } catch (e) {
         console.log('Não foi possível detectar capacidades da câmera:', e);
@@ -246,7 +268,7 @@
     return null;
   }
 
-  // Função para detectar se a imagem está focada
+  // Função para detectar se a imagem está focada (otimizada para celulares)
   function detectFocusQuality(imageData) {
     const data = imageData.data;
     const width = imageData.width;
@@ -254,10 +276,14 @@
     let edgeCount = 0;
     let totalPixels = 0;
     let highContrastPixels = 0;
+    let sharpEdges = 0;
     
-    // Analisa bordas na imagem (mais sensível)
-    for (let y = 1; y < height - 1; y += 1) { // Reduzi o step para mais precisão
-      for (let x = 1; x < width - 1; x += 1) {
+    // Para celulares, usa amostragem mais densa
+    const step = isMobile ? 1 : 2;
+    
+    // Analisa bordas na imagem (mais sensível para celulares)
+    for (let y = 1; y < height - 1; y += step) {
+      for (let x = 1; x < width - 1; x += step) {
         totalPixels++;
         const idx = (y * width + x) * 4;
         const gray = (data[idx] + data[idx + 1] + data[idx + 2]) / 3;
@@ -267,8 +293,10 @@
         const bottom = (data[idx + width * 4] + data[idx + width * 4 + 1] + data[idx + width * 4 + 2]) / 3;
         const diagonal = (data[idx + width * 4 + 4] + data[idx + width * 4 + 5] + data[idx + width * 4 + 6]) / 3;
         
-        // Threshold mais baixo para detectar mais bordas
-        const threshold = 15; // Reduzido ainda mais para ser mais sensível
+        // Threshold mais baixo para celulares
+        const threshold = isMobile ? 10 : 15;
+        const highThreshold = isMobile ? 30 : 50;
+        
         if (Math.abs(gray - right) > threshold || 
             Math.abs(gray - bottom) > threshold || 
             Math.abs(gray - diagonal) > threshold) {
@@ -276,23 +304,55 @@
         }
         
         // Detecta pixels de alto contraste
-        if (Math.abs(gray - right) > 50 || Math.abs(gray - bottom) > 50) {
+        if (Math.abs(gray - right) > highThreshold || Math.abs(gray - bottom) > highThreshold) {
           highContrastPixels++;
+        }
+        
+        // Detecta bordas muito nítidas (para celulares)
+        if (isMobile && (Math.abs(gray - right) > 60 || Math.abs(gray - bottom) > 60)) {
+          sharpEdges++;
         }
       }
     }
     
     const focusScore = edgeCount / totalPixels;
     const contrastScore = highContrastPixels / totalPixels;
-    const combinedScore = (focusScore * 0.7) + (contrastScore * 0.3);
+    const sharpScore = isMobile ? sharpEdges / totalPixels : 0;
     
-    console.log('Score de foco:', focusScore, 'Contraste:', contrastScore, 'Combinado:', combinedScore, 'Bordas:', edgeCount, 'Total:', totalPixels);
+    // Score combinado com pesos diferentes para celulares
+    const combinedScore = isMobile ? 
+      (focusScore * 0.5) + (contrastScore * 0.3) + (sharpScore * 0.2) :
+      (focusScore * 0.7) + (contrastScore * 0.3);
     
-    // Thresholds ajustados para ser mais sensível
+    console.log('Score de foco:', {
+      focusScore,
+      contrastScore,
+      sharpScore,
+      combinedScore,
+      edges: edgeCount,
+      total: totalPixels,
+      isMobile
+    });
+    
+    // Thresholds mais baixos para celulares
+    const thresholds = isMobile ? {
+      focused: 0.02,
+      excellent: 0.08,
+      good: 0.04,
+      acceptable: 0.02
+    } : {
+      focused: 0.03,
+      excellent: 0.12,
+      good: 0.06,
+      acceptable: 0.03
+    };
+    
     return {
       score: combinedScore,
-      isFocused: combinedScore > 0.03, // Reduzido ainda mais
-      quality: combinedScore > 0.12 ? 'excelente' : combinedScore > 0.06 ? 'boa' : combinedScore > 0.03 ? 'aceitável' : 'ruim'
+      isFocused: combinedScore > thresholds.focused,
+      quality: combinedScore > thresholds.excellent ? 'excelente' : 
+               combinedScore > thresholds.good ? 'boa' : 
+               combinedScore > thresholds.acceptable ? 'aceitável' : 'ruim'
     };
   }
 
@@ -711,7 +771,17 @@
       };
 
       // Configurações específicas para iOS
-      if (isMobile && /iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      if (isIOS) {
+        constraints.video = {
+          ...constraints.video,
+          facingMode: 'environment',
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 }
+        };
+      }
+
+      // Configurações específicas para Android
+      if (isAndroid) {
         constraints.video = {
           ...constraints.video,
           facingMode: 'environment',
@@ -745,6 +815,7 @@
       btnStop.disabled = false;
       btnFocus.disabled = false;
       btnAutoFocus.disabled = false;
+      btnUltraFocus.disabled = false;
       btnAggressiveFocus.disabled = false;
       btnForceFocus.disabled = false;
       btnManualFocus.disabled = false;
@@ -757,12 +828,13 @@
       startFocusMonitoring();
       
       const deviceType = isMobile ? 'celular' : 'computador';
-      setStatus(`Câmera ligada (${deviceType}). Use "Forçar Foco" para melhor resultado.`);
-      showStatusMessage(`Câmera ativada no ${deviceType}! Use o botão "Forçar Foco" para melhorar a qualidade.`, 'success');
+      const platform = isIOS ? 'iOS' : isAndroid ? 'Android' : 'desktop';
+      setStatus(`Câmera ligada (${deviceType} - ${platform}). Use "Foco Ultra" para melhor resultado.`);
+      showStatusMessage(`Câmera ativada no ${deviceType} (${platform})! Use "Foco Ultra" para melhor qualidade.`, 'success');
       
       // Adiciona eventos de toque para foco (especialmente importante em celulares)
       video.addEventListener('click', (e) => {
-        applyManualFocus(e.clientX, e.clientY);
+        preciseTouchFocus(e.clientX, e.clientY);
       });
       
       // Adiciona evento de toque no indicador de foco
@@ -771,16 +843,34 @@
         const rect = video.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        applyManualFocus(centerX, centerY);
+        preciseTouchFocus(centerX, centerY);
       });
+      
+      // Adiciona eventos de toque para celulares
+      if (isMobile) {
+        video.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          const touch = e.touches[0];
+          preciseTouchFocus(touch.clientX, touch.clientY);
+        });
+        
+        focusIndicator.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const rect = video.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          preciseTouchFocus(centerX, centerY);
+        });
+      }
       
       // Adiciona dicas específicas para celulares
       setTimeout(() => {
         if (focusIndicator.classList.contains('active')) {
           if (isMobile) {
-            showStatusMessage('📱 Dica: Mantenha o celular estável e use "Forçar Foco"!', 'success');
+            showStatusMessage('📱 Dica: Use "Foco Ultra" e mantenha o celular estável!', 'success');
           } else {
-            showStatusMessage('💡 Dica: Use "Forçar Foco" para melhor resultado!', 'success');
+            showStatusMessage('💡 Dica: Use "Foco Ultra" para melhor resultado!', 'success');
           }
         }
       }, 3000);
@@ -804,6 +894,7 @@
         btnStop.disabled = false;
         btnFocus.disabled = false;
         btnAutoFocus.disabled = false;
+        btnUltraFocus.disabled = false;
         btnAggressiveFocus.disabled = false;
         btnForceFocus.disabled = false;
         btnManualFocus.disabled = false;
@@ -875,6 +966,7 @@
     btnStop.disabled = true;
     btnFocus.disabled = true;
     btnAutoFocus.disabled = true;
+    btnUltraFocus.disabled = true;
     btnAggressiveFocus.disabled = true;
     btnForceFocus.disabled = true; // Adicionado
     btnManualFocus.disabled = true;
@@ -897,6 +989,7 @@
     applyManualFocus(centerX, centerY);
   };
   btnAutoFocus.onclick = applyAutoFocus;
+  btnUltraFocus.onclick = ultraAggressiveFocus;
   btnAggressiveFocus.onclick = applyAggressiveFocus;
   btnForceFocus.onclick = forceFocus; // Adicionado
   btnManualFocus.onclick = applyPreciseManualFocus;
@@ -1500,6 +1593,182 @@
       console.log('Erro ao forçar foco:', e);
       focusIndicator.classList.remove('focusing');
       showStatusMessage('Erro ao forçar foco: ' + e.message, 'error');
+    }
+  }
+
+  // Função ultra-agressiva para foco em celulares
+  async function ultraAggressiveFocus() {
+    if (!stream) {
+      showStatusMessage('Câmera não está ativa', 'error');
+      return;
+    }
+    
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      focusIndicator.classList.add('focusing');
+      showStatusMessage('Aplicando foco ultra-agressivo para celular...', 'success');
+      
+      // Estratégias específicas por plataforma
+      let focusStrategies = [];
+      
+      if (isIOS) {
+        // iOS: estratégias mais conservadoras
+        focusStrategies = [
+          { focusMode: 'continuous' },
+          { focusMode: 'single-shot' },
+          { focusMode: 'manual', focusDistance: 0.1 },
+          { focusMode: 'manual', focusDistance: 0.2 },
+          { focusMode: 'manual', focusDistance: 0.3 },
+          { focusMode: 'manual', focusDistance: 0.5 }
+        ];
+      } else if (isAndroid) {
+        // Android: estratégias mais agressivas
+        focusStrategies = [
+          { focusMode: 'continuous' },
+          { focusMode: 'single-shot' },
+          { focusMode: 'manual', focusDistance: 0.05 },
+          { focusMode: 'manual', focusDistance: 0.1 },
+          { focusMode: 'manual', focusDistance: 0.15 },
+          { focusMode: 'manual', focusDistance: 0.2 },
+          { focusMode: 'manual', focusDistance: 0.3 },
+          { focusMode: 'manual', focusDistance: 0.5 }
+        ];
+      } else {
+        // Outros dispositivos
+        focusStrategies = [
+          { focusMode: 'continuous' },
+          { focusMode: 'single-shot' },
+          { focusMode: 'manual', focusDistance: 0.1 },
+          { focusMode: 'manual', focusDistance: 0.2 }
+        ];
+      }
+      
+      let bestFocusQuality = { score: 0, quality: 'ruim' };
+      let bestStrategy = null;
+      
+      // Testa todas as estratégias e encontra a melhor
+      for (let i = 0; i < focusStrategies.length; i++) {
+        try {
+          console.log(`Testando estratégia ${i + 1}:`, focusStrategies[i]);
+          
+          await track.applyConstraints({
+            advanced: [focusStrategies[i]]
+          });
+          
+          // Aguarda estabilização
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // Verifica qualidade
+          const w = video.videoWidth;
+          const h = video.videoHeight;
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, w, h);
+          const imageData = ctx.getImageData(0, 0, w, h);
+          
+          const focusQuality = detectFocusQuality(imageData);
+          console.log(`Qualidade estratégia ${i + 1}:`, focusQuality);
+          
+          if (focusQuality.score > bestFocusQuality.score) {
+            bestFocusQuality = focusQuality;
+            bestStrategy = focusStrategies[i];
+          }
+          
+          // Se encontrou foco excelente, para
+          if (focusQuality.quality === 'excelente') {
+            bestFocusQuality = focusQuality;
+            bestStrategy = focusStrategies[i];
+            break;
+          }
+          
+        } catch (e) {
+          console.log(`Erro na estratégia ${i + 1}:`, e);
+          continue;
+        }
+      }
+      
+      // Aplica a melhor estratégia encontrada
+      if (bestStrategy) {
+        try {
+          await track.applyConstraints({
+            advanced: [bestStrategy]
+          });
+          
+          currentFocusMode = bestStrategy.focusMode;
+          showStatusMessage(`Melhor foco aplicado: ${bestStrategy.focusMode} (${bestFocusQuality.quality})`, 'success');
+          
+        } catch (e) {
+          console.log('Erro ao aplicar melhor estratégia:', e);
+        }
+      }
+      
+      // Restaura foco automático após um tempo
+      setTimeout(async () => {
+        try {
+          await track.applyConstraints({
+            advanced: [{
+              focusMode: 'continuous'
+            }]
+          });
+          currentFocusMode = 'continuous';
+          console.log('Foco automático restaurado');
+        } catch (e) {
+          console.log('Erro ao restaurar foco automático:', e);
+        }
+        focusIndicator.classList.remove('focusing');
+      }, 15000);
+      
+    } catch (e) {
+      console.log('Erro no foco ultra-agressivo:', e);
+      focusIndicator.classList.remove('focusing');
+      showStatusMessage('Erro no foco ultra-agressivo: ' + e.message, 'error');
+    }
+  }
+
+  // Função para foco por toque preciso
+  async function preciseTouchFocus(x, y) {
+    if (!stream) return;
+    
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      // Calcula posição relativa
+      const rect = video.getBoundingClientRect();
+      const relativeX = (x - rect.left) / rect.width;
+      const relativeY = (y - rect.top) / rect.height;
+      
+      console.log('Foco por toque em:', relativeX, relativeY);
+      
+      // Aplica foco no ponto específico
+      await track.applyConstraints({
+        advanced: [{
+          focusMode: 'manual',
+          focusDistance: 0.1,
+          pointsOfInterest: [{ x: relativeX, y: relativeY }]
+        }]
+      });
+      
+      showStatusMessage('Foco aplicado no ponto tocado!', 'success');
+      
+      // Retorna para foco automático após um tempo
+      setTimeout(async () => {
+        try {
+          await track.applyConstraints({
+            advanced: [{
+              focusMode: 'continuous'
+            }]
+          });
+        } catch (e) {
+          console.log('Erro ao restaurar foco automático:', e);
+        }
+      }, 5000);
+      
+    } catch (e) {
+      console.log('Erro no foco por toque:', e);
     }
   }
 </script>
