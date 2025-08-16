@@ -442,32 +442,64 @@
     }
     
     function generateBarcode(value, type) {
-      const canvas = document.createElement('canvas');
       const cleanValue = value.replace(/[^\d]/g, '');
+      const canvasId = `barcode-${Date.now()}`;
       
       try {
-        JsBarcode(canvas, cleanValue, {
-          format: 'CODE128',
-          width: 2,
-          height: 100,
-          displayValue: true,
-          fontSize: 16,
-          margin: 10
-        });
-        
-        return `
-          <div style="margin-top: 15px; text-align: center;">
-            <h4>📊 Código de Barras</h4>
-            <div style="margin: 10px 0;">
-              ${canvas.outerHTML}
+        // Retornar HTML com placeholder para o canvas
+        const html = `
+          <div style="margin-top: 20px; text-align: center; padding: 15px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e5e7eb;">
+            <h4 style="margin-bottom: 15px; color: #374151;">📊 Código de Barras</h4>
+            <div style="margin: 15px 0; display: flex; justify-content: center; align-items: center;">
+              <canvas id="${canvasId}" style="border: 1px solid #d1d5db; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"></canvas>
             </div>
-            <button class="btn btn-secondary" onclick="downloadBarcode('${canvas.toDataURL()}', '${type}_${cleanValue}')">
+            <button class="btn btn-secondary" onclick="downloadBarcodeFromCanvas('${canvasId}', '${type}_${cleanValue}')" style="margin-top: 15px;">
               💾 Download PNG
             </button>
           </div>
         `;
+        
+        // Renderizar o código de barras após o DOM ser atualizado
+        setTimeout(() => {
+          const canvas = document.getElementById(canvasId);
+          if (canvas) {
+            try {
+              JsBarcode(canvas, cleanValue, {
+                format: 'CODE128',
+                width: 2,
+                height: 100,
+                displayValue: true,
+                fontSize: 16,
+                margin: 10,
+                background: '#ffffff',
+                lineColor: '#000000'
+              });
+              console.log('Código de barras renderizado para:', cleanValue);
+            } catch (renderError) {
+              console.error('Erro ao renderizar código de barras:', renderError);
+              canvas.style.display = 'none';
+              canvas.parentNode.innerHTML = '<p style="color: #ef4444;">Erro ao renderizar código de barras</p>';
+            }
+          }
+        }, 100);
+        
+        return html;
       } catch (error) {
+        console.error('Erro ao gerar código de barras:', error);
         return '<p style="color: #ef4444;">Erro ao gerar código de barras</p>';
+      }
+    }
+    
+    function downloadBarcodeFromCanvas(canvasId, filename) {
+      const canvas = document.getElementById(canvasId);
+      if (canvas) {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = dataUrl;
+        link.click();
+      } else {
+        showToast('Erro: Canvas não encontrado', 'error');
       }
     }
     
