@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cpf-scanner-final-v1.0';
+const CACHE_NAME = 'cpf-scanner-otimizado-v1.0';
 const urlsToCache = [
   '/',
   '/index.html',

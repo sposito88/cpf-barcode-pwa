@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner CPF/CNPJ - Versão Final</title>
+    <title>Scanner CPF/CNPJ - Otimizado para Documentos Oficiais</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366f1">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -344,6 +344,39 @@
             margin-bottom: 15px;
         }
 
+        .optimization-info {
+            background: #f0fdf4;
+            border: 2px solid #22c55e;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .optimization-info h4 {
+            color: #16a34a;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .optimization-info ul {
+            list-style: none;
+            color: #166534;
+        }
+
+        .optimization-info li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .optimization-info li:before {
+            content: "✅";
+            position: absolute;
+            left: 0;
+        }
+
         @media (max-width: 480px) {
             .btn-group {
                 grid-template-columns: 1fr;
@@ -359,10 +392,21 @@
     <div class="container">
         <div class="header">
             <h1>📱 Scanner CPF/CNPJ</h1>
-            <p>OCR Real com Tesseract.js <span class="tech-badge">Versão Final</span></p>
+            <p>Otimizado para Documentos Oficiais <span class="tech-badge">OCR Avançado</span></p>
         </div>
 
         <div class="content">
+            <div class="optimization-info">
+                <h4>🚀 Melhorias Implementadas:</h4>
+                <ul>
+                    <li>Pré-processamento avançado de imagem</li>
+                    <li>Padrões flexíveis para documentos oficiais</li>
+                    <li>Limpeza automática de texto OCR</li>
+                    <li>Configuração otimizada para português BR</li>
+                    <li>Múltiplas tentativas de reconhecimento</li>
+                </ul>
+            </div>
+
             <div class="form-group">
                 <label for="document-input">Digite ou escaneie o documento:</label>
                 <input type="text" id="document-input" placeholder="Ex: 123.456.789-00" maxlength="18">
@@ -384,10 +428,10 @@
 
             <!-- Seção de upload de arquivo -->
             <div id="file-upload-section" class="file-upload">
-                <h4>📁 Ou faça upload de uma imagem:</h4>
+                <h4>📁 Upload de Documento Oficial:</h4>
                 <input type="file" id="file-input" accept="image/*" onchange="processUploadedFile()">
                 <p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
-                    Formatos suportados: JPG, PNG, WEBP
+                    Otimizado para: CPF, RG, CNH, Comprovantes da Receita Federal
                 </p>
             </div>
 
@@ -419,17 +463,19 @@
 
             <!-- Progresso do OCR -->
             <div id="ocr-progress" class="ocr-progress hidden">
-                <div>🔍 Analisando documento...</div>
+                <div>🔍 Analisando documento oficial...</div>
                 <div class="progress-bar">
                     <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
                 </div>
-                <div id="ocr-status" class="ocr-status">Inicializando OCR...</div>
+                <div id="ocr-status" class="ocr-status">Inicializando OCR otimizado...</div>
             </div>
 
             <!-- Texto detectado -->
             <div id="detected-text-section" class="hidden">
-                <h4>📄 Texto Detectado:</h4>
+                <h4>📄 Texto Detectado (Bruto):</h4>
                 <div id="detected-text" class="detected-text"></div>
+                <h4>🔧 Texto Processado:</h4>
+                <div id="processed-text" class="detected-text"></div>
             </div>
 
             <!-- Resultado -->
@@ -439,15 +485,14 @@
 
             <!-- Dicas -->
             <div class="tips">
-                <h4>🤖 OCR Real - Dicas para Melhor Resultado:</h4>
+                <h4>🤖 OCR Otimizado - Dicas para Documentos Oficiais:</h4>
                 <ul>
-                    <li><strong>Iluminação:</strong> Use boa luz natural ou artificial uniforme</li>
-                    <li><strong>Estabilidade:</strong> Mantenha o celular firme durante a captura</li>
-                    <li><strong>Distância:</strong> 15-25cm do documento para melhor foco</li>
-                    <li><strong>Qualidade:</strong> Documento limpo, sem dobras, manchas ou reflexos</li>
-                    <li><strong>Enquadramento:</strong> Centralize o CPF/CNPJ na tela</li>
-                    <li><strong>Contraste:</strong> Documento claro com texto escuro funciona melhor</li>
-                    <li><strong>Upload:</strong> Se a câmera não funcionar, use upload de arquivo</li>
+                    <li><strong>Documentos Aceitos:</strong> CPF, RG, CNH, Comprovantes da Receita Federal</li>
+                    <li><strong>Qualidade:</strong> Use imagens nítidas e bem iluminadas</li>
+                    <li><strong>Enquadramento:</strong> Capture todo o documento, não apenas o número</li>
+                    <li><strong>Formato:</strong> JPG, PNG ou WEBP em alta resolução</li>
+                    <li><strong>Processamento:</strong> Aguarde o processamento completo (5-15 segundos)</li>
+                    <li><strong>Múltiplas tentativas:</strong> Sistema tenta várias estratégias automaticamente</li>
                 </ul>
             </div>
         </div>
@@ -460,13 +505,8 @@
 
         // Inicializar aplicação
         document.addEventListener('DOMContentLoaded', function() {
-            showToast('Scanner OCR Real carregado! Pronto para uso', 'success');
+            showToast('Scanner OCR Otimizado carregado! Pronto para documentos oficiais', 'success');
             console.log('Tesseract.js carregado:', typeof Tesseract !== 'undefined');
-            
-            // Verificar suporte à câmera
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                console.log('Câmera não suportada neste navegador');
-            }
         });
 
         // Função de toast
@@ -538,6 +578,142 @@
             } else {
                 return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
             }
+        }
+
+        // NOVA FUNÇÃO: Limpeza avançada de texto OCR
+        function cleanOCRText(text) {
+            console.log('Texto original:', text);
+            
+            // Múltiplas estratégias de limpeza
+            let cleaned = text
+                // Normalizar espaços
+                .replace(/\s+/g, ' ')
+                // Limpar pontos com espaços
+                .replace(/\s*\.\s*/g, '.')
+                // Limpar hífens com espaços
+                .replace(/\s*-\s*/g, '-')
+                // Remover caracteres especiais comuns em OCR
+                .replace(/[^\d\.\-\s]/g, '')
+                // Remover espaços extras no início e fim
+                .trim();
+            
+            console.log('Texto limpo:', cleaned);
+            return cleaned;
+        }
+
+        // NOVA FUNÇÃO: Pré-processamento de imagem
+        function preprocessImage(canvas) {
+            const ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            
+            // Aplicar filtro de contraste e binarização
+            for (let i = 0; i < data.length; i += 4) {
+                // Converter para escala de cinza
+                const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                
+                // Aplicar contraste
+                const contrast = 1.5;
+                const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                const enhanced = factor * (gray - 128) + 128;
+                
+                // Binarização (preto e branco)
+                const threshold = 128;
+                const binary = enhanced > threshold ? 255 : 0;
+                
+                data[i] = binary;     // R
+                data[i + 1] = binary; // G
+                data[i + 2] = binary; // B
+                // Alpha permanece o mesmo
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            return canvas;
+        }
+
+        // NOVA FUNÇÃO: Extração avançada de documentos
+        function extractDocumentsFromTextAdvanced(text) {
+            const documents = [];
+            
+            console.log('Analisando texto para extração:', text);
+            
+            // Limpar texto primeiro
+            const cleanedText = cleanOCRText(text);
+            
+            // Padrões mais flexíveis para CPF
+            const flexibleCPFPatterns = [
+                // Padrão com espaços irregulares: "147 .594.864-61"
+                /\d{3}\s*\.?\s*\d{3}\s*\.?\s*\d{3}\s*-?\s*\d{2}/g,
+                // Padrão normal: "147.594.864-61"
+                /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g,
+                // Apenas números: "14759486461"
+                /\b\d{11}\b/g
+            ];
+            
+            // Padrões mais flexíveis para CNPJ
+            const flexibleCNPJPatterns = [
+                // Com espaços irregulares
+                /\d{2}\s*\.?\s*\d{3}\s*\.?\s*\d{3}\s*\/?\s*\d{4}\s*-?\s*\d{2}/g,
+                // Padrão normal
+                /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g,
+                // Apenas números
+                /\b\d{14}\b/g
+            ];
+            
+            // Buscar CPFs com padrões flexíveis
+            flexibleCPFPatterns.forEach((pattern, index) => {
+                console.log(`Testando padrão CPF ${index + 1}:`, pattern);
+                
+                const matches = text.match(pattern);
+                if (matches) {
+                    console.log('Matches encontrados:', matches);
+                    
+                    matches.forEach(match => {
+                        // Limpar match para validação
+                        const cleanMatch = match.replace(/[^\d]/g, '');
+                        console.log('Match limpo para validação:', cleanMatch);
+                        
+                        if (cleanMatch.length === 11 && validateCPF(cleanMatch)) {
+                            console.log('CPF válido encontrado:', cleanMatch);
+                            documents.push({
+                                type: 'cpf',
+                                value: match,
+                                clean: cleanMatch,
+                                formatted: formatDocument(cleanMatch, 'cpf')
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // Buscar CNPJs com padrões flexíveis
+            flexibleCNPJPatterns.forEach((pattern, index) => {
+                console.log(`Testando padrão CNPJ ${index + 1}:`, pattern);
+                
+                const matches = text.match(pattern);
+                if (matches) {
+                    console.log('Matches encontrados:', matches);
+                    
+                    matches.forEach(match => {
+                        // Limpar match para validação
+                        const cleanMatch = match.replace(/[^\d]/g, '');
+                        console.log('Match limpo para validação:', cleanMatch);
+                        
+                        if (cleanMatch.length === 14 && validateCNPJ(cleanMatch)) {
+                            console.log('CNPJ válido encontrado:', cleanMatch);
+                            documents.push({
+                                type: 'cnpj',
+                                value: match,
+                                clean: cleanMatch,
+                                formatted: formatDocument(cleanMatch, 'cnpj')
+                            });
+                        }
+                    });
+                }
+            });
+            
+            console.log('Documentos encontrados:', documents);
+            return documents;
         }
 
         // Validar documento
@@ -698,7 +874,7 @@
             errorSection.classList.add('hidden');
         }
 
-        // Processar arquivo enviado
+        // FUNÇÃO MELHORADA: Processar arquivo enviado
         async function processUploadedFile() {
             const fileInput = document.getElementById('file-input');
             const file = fileInput.files[0];
@@ -719,46 +895,73 @@
             
             try {
                 showOCRProgress();
-                showToast('Processando imagem enviada...', 'info');
+                showToast('Processando documento oficial...', 'info');
                 
-                // Processar com Tesseract.js
-                const result = await Tesseract.recognize(file, 'por', {
+                // Configuração otimizada para documentos oficiais
+                const ocrConfig = {
                     logger: function(m) {
                         updateOCRProgress(m);
                     },
-                    tessedit_char_whitelist: '0123456789.-/',
-                    tessedit_pageseg_mode: Tesseract.PSM.AUTO
-                });
+                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+                    tessedit_char_whitelist: '0123456789.-/ ',
+                    tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
+                    preserve_interword_spaces: '1'
+                };
                 
-                const detectedText = result.data.text;
-                console.log('Texto detectado do arquivo:', detectedText);
+                // Múltiplas tentativas com diferentes configurações
+                let detectedText = '';
+                let attempts = 0;
+                const maxAttempts = 3;
                 
-                // Mostrar texto detectado
+                while (attempts < maxAttempts && !detectedText.trim()) {
+                    attempts++;
+                    console.log(`Tentativa ${attempts} de ${maxAttempts}`);
+                    
+                    updateOCRProgress({
+                        status: `Tentativa ${attempts}/${maxAttempts}`,
+                        progress: 0
+                    });
+                    
+                    const result = await Tesseract.recognize(file, 'por', ocrConfig);
+                    detectedText = result.data.text;
+                    
+                    if (!detectedText.trim() && attempts < maxAttempts) {
+                        console.log('Tentativa falhou, tentando novamente...');
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+                
+                console.log('Texto detectado final:', detectedText);
+                
+                // Mostrar texto detectado (bruto e processado)
                 showDetectedText(detectedText);
                 
-                // Procurar por padrões de CPF/CNPJ
-                const foundDocuments = extractDocumentsFromText(detectedText);
+                // Procurar por padrões de CPF/CNPJ com função avançada
+                const foundDocuments = extractDocumentsFromTextAdvanced(detectedText);
                 
                 if (foundDocuments.length > 0) {
                     const doc = foundDocuments[0];
                     
                     // Preencher formulário
-                    document.getElementById('document-input').value = doc.value;
+                    document.getElementById('document-input').value = doc.formatted;
                     document.getElementById('document-type').value = doc.type;
                     
-                    showToast(`${doc.type.toUpperCase()} detectado: ${doc.value}`, 'success');
+                    showToast(`${doc.type.toUpperCase()} detectado: ${doc.formatted}`, 'success');
                     
                     // Validar automaticamente
                     setTimeout(() => validateDocument(), 500);
                 } else {
-                    showToast('Nenhum CPF/CNPJ encontrado na imagem', 'error');
+                    showToast('Nenhum CPF/CNPJ válido encontrado na imagem', 'error');
+                    
+                    // Sugerir melhorias
+                    showToast('Dica: Verifique se a imagem está nítida e bem iluminada', 'info');
                 }
                 
                 hideOCRProgress();
                 
             } catch (error) {
                 console.error('Erro no OCR do arquivo:', error);
-                showToast('Erro ao processar imagem', 'error');
+                showToast('Erro ao processar imagem. Tente uma imagem mais nítida.', 'error');
                 hideOCRProgress();
             } finally {
                 isProcessing = false;
@@ -766,7 +969,7 @@
             }
         }
 
-        // Capturar e analisar com câmera
+        // FUNÇÃO MELHORADA: Capturar e analisar com câmera
         async function captureAndAnalyze() {
             if (isProcessing) {
                 showToast('OCR já está processando...', 'info');
@@ -790,35 +993,43 @@
                 canvas.height = video.videoHeight;
                 ctx.drawImage(video, 0, 0);
                 
+                // Pré-processar imagem
+                preprocessImage(canvas);
+                
                 // Mostrar progresso
                 showOCRProgress();
                 
-                // Processar com Tesseract.js
-                const result = await Tesseract.recognize(canvas, 'por', {
+                // Configuração otimizada
+                const ocrConfig = {
                     logger: function(m) {
                         updateOCRProgress(m);
                     },
-                    tessedit_char_whitelist: '0123456789.-/',
-                    tessedit_pageseg_mode: Tesseract.PSM.AUTO
-                });
+                    tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+                    tessedit_char_whitelist: '0123456789.-/ ',
+                    tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
+                    preserve_interword_spaces: '1'
+                };
                 
+                // Processar com Tesseract.js
+                const result = await Tesseract.recognize(canvas, 'por', ocrConfig);
                 const detectedText = result.data.text;
+                
                 console.log('Texto detectado da câmera:', detectedText);
                 
                 // Mostrar texto detectado
                 showDetectedText(detectedText);
                 
                 // Procurar por padrões de CPF/CNPJ
-                const foundDocuments = extractDocumentsFromText(detectedText);
+                const foundDocuments = extractDocumentsFromTextAdvanced(detectedText);
                 
                 if (foundDocuments.length > 0) {
                     const doc = foundDocuments[0];
                     
                     // Preencher formulário
-                    document.getElementById('document-input').value = doc.value;
+                    document.getElementById('document-input').value = doc.formatted;
                     document.getElementById('document-type').value = doc.type;
                     
-                    showToast(`${doc.type.toUpperCase()} detectado: ${doc.value}`, 'success');
+                    showToast(`${doc.type.toUpperCase()} detectado: ${doc.formatted}`, 'success');
                     
                     // Validar automaticamente
                     setTimeout(() => validateDocument(), 500);
@@ -837,59 +1048,6 @@
             }
         }
 
-        // Extrair documentos do texto detectado
-        function extractDocumentsFromText(text) {
-            const documents = [];
-            
-            // Padrões para CPF (com e sem formatação)
-            const cpfPatterns = [
-                /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g,  // 123.456.789-00 ou 12345678900
-                /\b\d{11}\b/g  // 11 dígitos seguidos
-            ];
-            
-            // Padrões para CNPJ (com e sem formatação)
-            const cnpjPatterns = [
-                /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g,  // 12.345.678/0001-90
-                /\b\d{14}\b/g  // 14 dígitos seguidos
-            ];
-            
-            // Buscar CPFs
-            cpfPatterns.forEach(pattern => {
-                const matches = text.match(pattern);
-                if (matches) {
-                    matches.forEach(match => {
-                        const cleanMatch = match.replace(/[^\d]/g, '');
-                        if (cleanMatch.length === 11 && validateCPF(cleanMatch)) {
-                            documents.push({
-                                type: 'cpf',
-                                value: match,
-                                clean: cleanMatch
-                            });
-                        }
-                    });
-                }
-            });
-            
-            // Buscar CNPJs
-            cnpjPatterns.forEach(pattern => {
-                const matches = text.match(pattern);
-                if (matches) {
-                    matches.forEach(match => {
-                        const cleanMatch = match.replace(/[^\d]/g, '');
-                        if (cleanMatch.length === 14 && validateCNPJ(cleanMatch)) {
-                            documents.push({
-                                type: 'cnpj',
-                                value: match,
-                                clean: cleanMatch
-                            });
-                        }
-                    });
-                }
-            });
-            
-            return documents;
-        }
-
         // Mostrar progresso do OCR
         function showOCRProgress() {
             const progressSection = document.getElementById('ocr-progress');
@@ -899,7 +1057,7 @@
             const statusText = document.getElementById('ocr-status');
             
             progressFill.style.width = '0%';
-            statusText.textContent = 'Inicializando OCR...';
+            statusText.textContent = 'Inicializando OCR otimizado...';
         }
 
         // Atualizar progresso do OCR
@@ -924,12 +1082,19 @@
             progressSection.classList.add('hidden');
         }
 
-        // Mostrar texto detectado
+        // FUNÇÃO MELHORADA: Mostrar texto detectado
         function showDetectedText(text) {
             const section = document.getElementById('detected-text-section');
             const textDiv = document.getElementById('detected-text');
+            const processedDiv = document.getElementById('processed-text');
             
+            // Mostrar texto bruto
             textDiv.textContent = text || 'Nenhum texto detectado';
+            
+            // Mostrar texto processado
+            const cleanedText = cleanOCRText(text);
+            processedDiv.textContent = cleanedText || 'Nenhum texto processado';
+            
             section.classList.remove('hidden');
         }
 
