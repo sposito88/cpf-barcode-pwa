@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner CPF/CNPJ - Tecnologia ZXing</title>
+    <title>Scanner CPF/CNPJ - Versão Final</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366f1">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     
-    <!-- ZXing Library para reconhecimento avançado -->
-    <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+    <!-- Tesseract.js para OCR real -->
+    <script src="https://unpkg.com/tesseract.js@v4.1.1/dist/tesseract.min.js"></script>
     <!-- JsBarcode para geração de códigos -->
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     
@@ -38,7 +38,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, #22c55e, #16a34a);
             color: white;
             padding: 30px 20px;
             text-align: center;
@@ -80,8 +80,8 @@
 
         input:focus, select:focus {
             outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
         }
 
         .btn-group {
@@ -103,12 +103,12 @@
         }
 
         .btn-primary {
-            background: #6366f1;
+            background: #22c55e;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #5856eb;
+            background: #16a34a;
             transform: translateY(-2px);
         }
 
@@ -142,8 +142,8 @@
         }
 
         .camera-section.active {
-            border-color: #6366f1;
-            background: #f0f4ff;
+            border-color: #22c55e;
+            background: #f0fdf4;
         }
 
         #video {
@@ -249,60 +249,99 @@
             background: #ef4444;
         }
 
+        .toast.info {
+            background: #3b82f6;
+        }
+
         .toast.show {
             transform: translateX(0);
         }
 
-        .scanning-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(99, 102, 241, 0.9);
-            color: white;
-            padding: 10px 20px;
+        .ocr-progress {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f0f9ff;
+            border: 1px solid #3b82f6;
             border-radius: 8px;
-            font-weight: 600;
-            z-index: 10;
+            text-align: center;
         }
 
-        .scan-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border: 2px solid #6366f1;
-            border-radius: 12px;
-            pointer-events: none;
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
         }
 
-        .scan-overlay::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: #6366f1;
-            animation: scan 2s linear infinite;
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.3s ease;
+            border-radius: 4px;
         }
 
-        @keyframes scan {
-            0% { transform: translateY(-100px); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: translateY(100px); opacity: 0; }
+        .ocr-status {
+            font-size: 14px;
+            color: #1e40af;
+            margin-top: 5px;
         }
 
         .tech-badge {
             display: inline-block;
-            background: linear-gradient(45deg, #6366f1, #8b5cf6);
+            background: linear-gradient(45deg, #22c55e, #16a34a);
             color: white;
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
             margin-left: 10px;
+        }
+
+        .detected-text {
+            background: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-upload {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f0f9ff;
+            border: 2px dashed #3b82f6;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .file-upload input[type="file"] {
+            margin: 10px 0;
+        }
+
+        .camera-error {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .camera-error h4 {
+            color: #dc2626;
+            margin-bottom: 10px;
+        }
+
+        .camera-error p {
+            color: #7f1d1d;
+            margin-bottom: 15px;
         }
 
         @media (max-width: 480px) {
@@ -320,7 +359,7 @@
     <div class="container">
         <div class="header">
             <h1>📱 Scanner CPF/CNPJ</h1>
-            <p>Tecnologia ZXing Avançada <span class="tech-badge">ZXing Pro</span></p>
+            <p>OCR Real com Tesseract.js <span class="tech-badge">Versão Final</span></p>
         </div>
 
         <div class="content">
@@ -339,41 +378,76 @@
 
             <div class="btn-group">
                 <button class="btn btn-primary" onclick="validateDocument()">✅ Validar</button>
-                <button class="btn btn-secondary" onclick="startZXingScanner()">🔍 Scanner ZXing</button>
+                <button class="btn btn-secondary" onclick="startOCR()">🔍 Scanner OCR</button>
                 <button class="btn btn-danger" onclick="clearForm()">🗑️ Limpar</button>
             </div>
 
-            <div id="camera-section" class="camera-section hidden">
-                <div style="position: relative; display: inline-block;">
-                    <video id="video" autoplay muted playsinline></video>
-                    <div id="scan-overlay" class="scan-overlay hidden"></div>
-                    <div id="scanning-indicator" class="scanning-indicator hidden">
-                        🔍 Escaneando documento...
-                    </div>
-                </div>
-                <div class="camera-controls">
-                    <button class="btn btn-primary" onclick="captureFrame()">📸 Capturar</button>
-                    <button class="btn btn-secondary" onclick="toggleFlash()">💡 Flash</button>
-                    <button class="btn btn-danger" onclick="stopScanner()">❌ Fechar</button>
-                </div>
-                <p style="margin-top: 15px; color: #6b7280; font-size: 14px;">
-                    Posicione o documento na tela e aguarde o reconhecimento automático
+            <!-- Seção de upload de arquivo -->
+            <div id="file-upload-section" class="file-upload">
+                <h4>📁 Ou faça upload de uma imagem:</h4>
+                <input type="file" id="file-input" accept="image/*" onchange="processUploadedFile()">
+                <p style="font-size: 14px; color: #6b7280; margin-top: 10px;">
+                    Formatos suportados: JPG, PNG, WEBP
                 </p>
             </div>
 
+            <!-- Seção da câmera -->
+            <div id="camera-section" class="camera-section hidden">
+                <video id="video" autoplay muted playsinline></video>
+                <div class="camera-controls">
+                    <button class="btn btn-primary" onclick="captureAndAnalyze()">📸 Capturar e Analisar</button>
+                    <button class="btn btn-secondary" onclick="toggleFlash()">💡 Flash</button>
+                    <button class="btn btn-danger" onclick="stopOCR()">❌ Fechar</button>
+                </div>
+                <p style="margin-top: 15px; color: #6b7280; font-size: 14px;">
+                    Posicione o documento na tela e clique em "Capturar e Analisar"
+                </p>
+            </div>
+
+            <!-- Erro de câmera -->
+            <div id="camera-error" class="camera-error hidden">
+                <h4>📷 Câmera não disponível</h4>
+                <p>Não foi possível acessar a câmera do dispositivo.</p>
+                <p><strong>Alternativas:</strong></p>
+                <ul style="text-align: left; margin: 10px 0;">
+                    <li>• Use o upload de arquivo acima</li>
+                    <li>• Digite o CPF/CNPJ manualmente</li>
+                    <li>• Verifique as permissões da câmera</li>
+                </ul>
+                <button class="btn btn-secondary" onclick="hideError()">OK, Entendi</button>
+            </div>
+
+            <!-- Progresso do OCR -->
+            <div id="ocr-progress" class="ocr-progress hidden">
+                <div>🔍 Analisando documento...</div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="ocr-status" class="ocr-status">Inicializando OCR...</div>
+            </div>
+
+            <!-- Texto detectado -->
+            <div id="detected-text-section" class="hidden">
+                <h4>📄 Texto Detectado:</h4>
+                <div id="detected-text" class="detected-text"></div>
+            </div>
+
+            <!-- Resultado -->
             <div id="result-section" class="result-section hidden">
                 <!-- Resultado aparecerá aqui -->
             </div>
 
+            <!-- Dicas -->
             <div class="tips">
-                <h4>⚡ Tecnologia ZXing - Dicas para Melhor Resultado:</h4>
+                <h4>🤖 OCR Real - Dicas para Melhor Resultado:</h4>
                 <ul>
-                    <li><strong>Iluminação:</strong> Use boa luz, evite sombras e reflexos</li>
-                    <li><strong>Estabilidade:</strong> Mantenha o celular firme durante o scan</li>
+                    <li><strong>Iluminação:</strong> Use boa luz natural ou artificial uniforme</li>
+                    <li><strong>Estabilidade:</strong> Mantenha o celular firme durante a captura</li>
                     <li><strong>Distância:</strong> 15-25cm do documento para melhor foco</li>
-                    <li><strong>Qualidade:</strong> Documento limpo, sem dobras ou manchas</li>
+                    <li><strong>Qualidade:</strong> Documento limpo, sem dobras, manchas ou reflexos</li>
                     <li><strong>Enquadramento:</strong> Centralize o CPF/CNPJ na tela</li>
-                    <li><strong>Paciência:</strong> ZXing é mais preciso, aguarde alguns segundos</li>
+                    <li><strong>Contraste:</strong> Documento claro com texto escuro funciona melhor</li>
+                    <li><strong>Upload:</strong> Se a câmera não funcionar, use upload de arquivo</li>
                 </ul>
             </div>
         </div>
@@ -381,21 +455,17 @@
 
     <script>
         // Variáveis globais
-        let codeReader = null;
         let currentStream = null;
-        let isScanning = false;
-        let scanInterval = null;
+        let isProcessing = false;
 
-        // Inicializar ZXing
+        // Inicializar aplicação
         document.addEventListener('DOMContentLoaded', function() {
-            try {
-                // Inicializar ZXing MultiFormatReader para texto
-                codeReader = new ZXing.BrowserMultiFormatReader();
-                showToast('Scanner ZXing carregado! Pronto para uso', 'success');
-                console.log('ZXing inicializado com sucesso');
-            } catch (error) {
-                console.error('Erro ao inicializar ZXing:', error);
-                showToast('Erro ao carregar ZXing. Usando OCR básico.', 'error');
+            showToast('Scanner OCR Real carregado! Pronto para uso', 'success');
+            console.log('Tesseract.js carregado:', typeof Tesseract !== 'undefined');
+            
+            // Verificar suporte à câmera
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.log('Câmera não suportada neste navegador');
             }
         });
 
@@ -560,262 +630,307 @@
             }
         }
 
-        // Iniciar scanner ZXing
-        async function startZXingScanner() {
-            if (!codeReader) {
-                showToast('ZXing não disponível. Verifique a conexão.', 'error');
+        // Iniciar OCR (câmera ou upload)
+        async function startOCR() {
+            if (isProcessing) {
+                showToast('OCR já está processando...', 'info');
                 return;
             }
 
+            // Tentar câmera primeiro
+            try {
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    await startCameraOCR();
+                } else {
+                    throw new Error('Câmera não suportada');
+                }
+            } catch (error) {
+                console.error('Erro ao iniciar câmera:', error);
+                showCameraError();
+            }
+        }
+
+        // Iniciar OCR com câmera
+        async function startCameraOCR() {
             try {
                 const cameraSection = document.getElementById('camera-section');
                 const video = document.getElementById('video');
-                const scanOverlay = document.getElementById('scan-overlay');
-                const scanningIndicator = document.getElementById('scanning-indicator');
                 
                 cameraSection.classList.remove('hidden');
                 cameraSection.classList.add('active');
-                scanOverlay.classList.remove('hidden');
-                scanningIndicator.classList.remove('hidden');
                 
-                // Obter stream da câmera
-                currentStream = await navigator.mediaDevices.getUserMedia({
+                // Configurações da câmera com fallbacks
+                const constraints = {
                     video: {
-                        facingMode: 'environment',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920, min: 640 },
+                        height: { ideal: 1080, min: 480 }
                     }
+                };
+                
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = currentStream;
+                
+                showToast('Câmera ativada! Posicione o documento e clique em Capturar', 'success');
+                hideError();
+                
+            } catch (error) {
+                console.error('Erro ao iniciar câmera:', error);
+                showCameraError();
+                throw error;
+            }
+        }
+
+        // Mostrar erro de câmera
+        function showCameraError() {
+            const errorSection = document.getElementById('camera-error');
+            errorSection.classList.remove('hidden');
+            
+            const cameraSection = document.getElementById('camera-section');
+            cameraSection.classList.add('hidden');
+            
+            showToast('Câmera não disponível. Use upload de arquivo ou digite manualmente.', 'error');
+        }
+
+        // Esconder erro
+        function hideError() {
+            const errorSection = document.getElementById('camera-error');
+            errorSection.classList.add('hidden');
+        }
+
+        // Processar arquivo enviado
+        async function processUploadedFile() {
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                showToast('Por favor, selecione um arquivo de imagem', 'error');
+                return;
+            }
+            
+            if (isProcessing) {
+                showToast('OCR já está processando...', 'info');
+                return;
+            }
+            
+            isProcessing = true;
+            
+            try {
+                showOCRProgress();
+                showToast('Processando imagem enviada...', 'info');
+                
+                // Processar com Tesseract.js
+                const result = await Tesseract.recognize(file, 'por', {
+                    logger: function(m) {
+                        updateOCRProgress(m);
+                    },
+                    tessedit_char_whitelist: '0123456789.-/',
+                    tessedit_pageseg_mode: Tesseract.PSM.AUTO
                 });
                 
-                video.srcObject = currentStream;
-                isScanning = true;
+                const detectedText = result.data.text;
+                console.log('Texto detectado do arquivo:', detectedText);
                 
-                showToast('Scanner ZXing ativado! Posicione o documento', 'success');
+                // Mostrar texto detectado
+                showDetectedText(detectedText);
                 
-                // Iniciar scan contínuo
-                startContinuousScanning();
+                // Procurar por padrões de CPF/CNPJ
+                const foundDocuments = extractDocumentsFromText(detectedText);
+                
+                if (foundDocuments.length > 0) {
+                    const doc = foundDocuments[0];
+                    
+                    // Preencher formulário
+                    document.getElementById('document-input').value = doc.value;
+                    document.getElementById('document-type').value = doc.type;
+                    
+                    showToast(`${doc.type.toUpperCase()} detectado: ${doc.value}`, 'success');
+                    
+                    // Validar automaticamente
+                    setTimeout(() => validateDocument(), 500);
+                } else {
+                    showToast('Nenhum CPF/CNPJ encontrado na imagem', 'error');
+                }
+                
+                hideOCRProgress();
                 
             } catch (error) {
-                console.error('Erro ao iniciar scanner:', error);
-                showToast('Erro ao acessar câmera', 'error');
+                console.error('Erro no OCR do arquivo:', error);
+                showToast('Erro ao processar imagem', 'error');
+                hideOCRProgress();
+            } finally {
+                isProcessing = false;
+                fileInput.value = ''; // Limpar input
             }
         }
 
-        // Scan contínuo com ZXing
-        function startContinuousScanning() {
-            if (!isScanning) return;
-            
-            scanInterval = setInterval(async () => {
-                if (!isScanning) return;
-                
-                try {
-                    const video = document.getElementById('video');
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    ctx.drawImage(video, 0, 0);
-                    
-                    // Tentar ler texto da imagem usando ZXing
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    
-                    // Processar imagem para melhor reconhecimento
-                    const processedText = await processImageForText(canvas);
-                    
-                    if (processedText) {
-                        const cpfMatch = processedText.match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/);
-                        const cnpjMatch = processedText.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/);
-                        
-                        if (cpfMatch || cnpjMatch) {
-                            const foundDoc = cpfMatch ? cpfMatch[0] : cnpjMatch[0];
-                            const docType = cpfMatch ? 'cpf' : 'cnpj';
-                            
-                            // Preencher formulário
-                            document.getElementById('document-input').value = foundDoc;
-                            document.getElementById('document-type').value = docType;
-                            
-                            showToast(`${docType.toUpperCase()} detectado: ${foundDoc}`, 'success');
-                            
-                            // Parar scanning e validar
-                            stopScanner();
-                            setTimeout(() => validateDocument(), 500);
-                        }
-                    }
-                    
-                } catch (error) {
-                    console.log('Erro no scan:', error);
-                }
-            }, 1000); // Scan a cada segundo
-        }
+        // Capturar e analisar com câmera
+        async function captureAndAnalyze() {
+            if (isProcessing) {
+                showToast('OCR já está processando...', 'info');
+                return;
+            }
 
-        // Processar imagem para texto usando técnicas avançadas
-        async function processImageForText(canvas) {
+            if (!currentStream) {
+                showToast('Câmera não está ativa', 'error');
+                return;
+            }
+
+            isProcessing = true;
+            
             try {
+                const video = document.getElementById('video');
+                const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
-                // Múltiplas técnicas de processamento
-                const results = await Promise.all([
-                    enhanceImageForOCR(canvas),
-                    detectNumberPatterns(canvas),
-                    analyzeTextRegions(canvas)
-                ]);
+                // Capturar frame
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
                 
-                // Combinar resultados
-                const combinedText = results.join(' ');
-                console.log('Texto combinado encontrado:', combinedText);
+                // Mostrar progresso
+                showOCRProgress();
                 
-                return combinedText;
+                // Processar com Tesseract.js
+                const result = await Tesseract.recognize(canvas, 'por', {
+                    logger: function(m) {
+                        updateOCRProgress(m);
+                    },
+                    tessedit_char_whitelist: '0123456789.-/',
+                    tessedit_pageseg_mode: Tesseract.PSM.AUTO
+                });
+                
+                const detectedText = result.data.text;
+                console.log('Texto detectado da câmera:', detectedText);
+                
+                // Mostrar texto detectado
+                showDetectedText(detectedText);
+                
+                // Procurar por padrões de CPF/CNPJ
+                const foundDocuments = extractDocumentsFromText(detectedText);
+                
+                if (foundDocuments.length > 0) {
+                    const doc = foundDocuments[0];
+                    
+                    // Preencher formulário
+                    document.getElementById('document-input').value = doc.value;
+                    document.getElementById('document-type').value = doc.type;
+                    
+                    showToast(`${doc.type.toUpperCase()} detectado: ${doc.value}`, 'success');
+                    
+                    // Validar automaticamente
+                    setTimeout(() => validateDocument(), 500);
+                } else {
+                    showToast('Nenhum CPF/CNPJ encontrado no documento', 'error');
+                }
+                
+                hideOCRProgress();
                 
             } catch (error) {
-                console.error('Erro no processamento:', error);
-                return null;
+                console.error('Erro no OCR da câmera:', error);
+                showToast('Erro ao processar imagem', 'error');
+                hideOCRProgress();
+            } finally {
+                isProcessing = false;
             }
         }
 
-        // Melhorar imagem para OCR
-        async function enhanceImageForOCR(canvas) {
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
+        // Extrair documentos do texto detectado
+        function extractDocumentsFromText(text) {
+            const documents = [];
             
-            // Aplicar múltiplos filtros
-            for (let i = 0; i < data.length; i += 4) {
-                // Converter para escala de cinza
-                const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-                
-                // Aumentar contraste
-                const contrast = 1.5;
-                const enhanced = ((gray - 128) * contrast) + 128;
-                
-                // Binarização adaptativa
-                const threshold = enhanced > 140 ? 255 : 0;
-                
-                data[i] = threshold;
-                data[i + 1] = threshold;
-                data[i + 2] = threshold;
-            }
+            // Padrões para CPF (com e sem formatação)
+            const cpfPatterns = [
+                /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g,  // 123.456.789-00 ou 12345678900
+                /\b\d{11}\b/g  // 11 dígitos seguidos
+            ];
             
-            ctx.putImageData(imageData, 0, 0);
+            // Padrões para CNPJ (com e sem formatação)
+            const cnpjPatterns = [
+                /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g,  // 12.345.678/0001-90
+                /\b\d{14}\b/g  // 14 dígitos seguidos
+            ];
             
-            // Usar Tesseract se disponível
-            if (window.Tesseract) {
-                try {
-                    const result = await Tesseract.recognize(canvas, 'por', {
-                        logger: m => console.log('OCR:', m.status),
-                        tessedit_char_whitelist: '0123456789.-/',
-                        tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
-                    });
-                    return result.data.text;
-                } catch (error) {
-                    console.log('Tesseract não disponível, usando análise básica');
-                }
-            }
-            
-            return '';
-        }
-
-        // Detectar padrões de números específicos
-        function detectNumberPatterns(canvas) {
-            const ctx = canvas.getContext('2d');
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // Análise de regiões com alta densidade de pixels escuros (números)
-            const regions = findTextRegions(imageData);
-            const patterns = [];
-            
-            regions.forEach(region => {
-                // Simular reconhecimento de padrões
-                const pattern = analyzeRegionPattern(region);
-                if (pattern) patterns.push(pattern);
-            });
-            
-            return patterns.join(' ');
-        }
-
-        // Encontrar regiões de texto
-        function findTextRegions(imageData) {
-            const { width, height, data } = imageData;
-            const regions = [];
-            const blockSize = 20;
-            
-            for (let y = 0; y < height - blockSize; y += blockSize) {
-                for (let x = 0; x < width - blockSize; x += blockSize) {
-                    let darkPixels = 0;
-                    
-                    // Contar pixels escuros no bloco
-                    for (let by = 0; by < blockSize; by++) {
-                        for (let bx = 0; bx < blockSize; bx++) {
-                            const idx = ((y + by) * width + (x + bx)) * 4;
-                            if (data[idx] < 128) darkPixels++;
+            // Buscar CPFs
+            cpfPatterns.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches) {
+                    matches.forEach(match => {
+                        const cleanMatch = match.replace(/[^\d]/g, '');
+                        if (cleanMatch.length === 11 && validateCPF(cleanMatch)) {
+                            documents.push({
+                                type: 'cpf',
+                                value: match,
+                                clean: cleanMatch
+                            });
                         }
-                    }
-                    
-                    // Se tem densidade suficiente de pixels escuros, pode ser texto
-                    if (darkPixels > blockSize * blockSize * 0.1) {
-                        regions.push({ x, y, width: blockSize, height: blockSize, density: darkPixels });
-                    }
-                }
-            }
-            
-            return regions;
-        }
-
-        // Analisar padrão da região
-        function analyzeRegionPattern(region) {
-            // Simulação de reconhecimento de padrões
-            // Em implementação real, usaria ML ou algoritmos mais sofisticados
-            
-            const patterns = [
-                '064.443.594-14',
-                '06444359414',
-                '111.444.777-35',
-                '11144477735'
-            ];
-            
-            // Retornar padrão aleatório para demonstração
-            if (Math.random() > 0.7) {
-                return patterns[Math.floor(Math.random() * patterns.length)];
-            }
-            
-            return null;
-        }
-
-        // Analisar regiões de texto
-        function analyzeTextRegions(canvas) {
-            // Implementação básica de análise de regiões
-            // Procurar por padrões específicos de CPF/CNPJ
-            
-            const commonPatterns = [
-                /\d{3}\.?\d{3}\.?\d{3}-?\d{2}/g,  // CPF
-                /\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g  // CNPJ
-            ];
-            
-            // Simular encontrar padrões na imagem
-            // Em implementação real, faria análise pixel por pixel
-            return '';
-        }
-
-        // Capturar frame
-        function captureFrame() {
-            const video = document.getElementById('video');
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            
-            showToast('Frame capturado! Processando...', 'success');
-            
-            // Processar frame capturado
-            processImageForText(canvas).then(text => {
-                if (text) {
-                    console.log('Texto encontrado:', text);
-                    // Processar texto encontrado
+                    });
                 }
             });
+            
+            // Buscar CNPJs
+            cnpjPatterns.forEach(pattern => {
+                const matches = text.match(pattern);
+                if (matches) {
+                    matches.forEach(match => {
+                        const cleanMatch = match.replace(/[^\d]/g, '');
+                        if (cleanMatch.length === 14 && validateCNPJ(cleanMatch)) {
+                            documents.push({
+                                type: 'cnpj',
+                                value: match,
+                                clean: cleanMatch
+                            });
+                        }
+                    });
+                }
+            });
+            
+            return documents;
+        }
+
+        // Mostrar progresso do OCR
+        function showOCRProgress() {
+            const progressSection = document.getElementById('ocr-progress');
+            progressSection.classList.remove('hidden');
+            
+            const progressFill = document.getElementById('progress-fill');
+            const statusText = document.getElementById('ocr-status');
+            
+            progressFill.style.width = '0%';
+            statusText.textContent = 'Inicializando OCR...';
+        }
+
+        // Atualizar progresso do OCR
+        function updateOCRProgress(m) {
+            const progressFill = document.getElementById('progress-fill');
+            const statusText = document.getElementById('ocr-status');
+            
+            if (m.status === 'recognizing text') {
+                const progress = Math.round(m.progress * 100);
+                progressFill.style.width = progress + '%';
+                statusText.textContent = `Reconhecendo texto... ${progress}%`;
+            } else {
+                statusText.textContent = m.status;
+            }
+            
+            console.log('OCR Progress:', m);
+        }
+
+        // Esconder progresso do OCR
+        function hideOCRProgress() {
+            const progressSection = document.getElementById('ocr-progress');
+            progressSection.classList.add('hidden');
+        }
+
+        // Mostrar texto detectado
+        function showDetectedText(text) {
+            const section = document.getElementById('detected-text-section');
+            const textDiv = document.getElementById('detected-text');
+            
+            textDiv.textContent = text || 'Nenhum texto detectado';
+            section.classList.remove('hidden');
         }
 
         // Toggle flash (se disponível)
@@ -838,28 +953,19 @@
             }
         }
 
-        // Parar scanner
-        function stopScanner() {
-            isScanning = false;
-            
-            if (scanInterval) {
-                clearInterval(scanInterval);
-                scanInterval = null;
-            }
-            
+        // Parar OCR
+        function stopOCR() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => track.stop());
                 currentStream = null;
             }
             
             const cameraSection = document.getElementById('camera-section');
-            const scanOverlay = document.getElementById('scan-overlay');
-            const scanningIndicator = document.getElementById('scanning-indicator');
-            
             cameraSection.classList.add('hidden');
             cameraSection.classList.remove('active');
-            scanOverlay.classList.add('hidden');
-            scanningIndicator.classList.add('hidden');
+            
+            hideOCRProgress();
+            hideError();
             
             showToast('Scanner fechado', 'success');
         }
@@ -868,6 +974,9 @@
         function clearForm() {
             document.getElementById('document-input').value = '';
             document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('detected-text-section').classList.add('hidden');
+            document.getElementById('file-input').value = '';
+            hideError();
             showToast('Formulário limpo', 'success');
         }
 

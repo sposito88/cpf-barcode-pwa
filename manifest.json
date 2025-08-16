@@ -1,11 +1,11 @@
 {
-  "name": "Scanner de Documentos - Foco Definitivo",
+  "name": "Scanner CPF/CNPJ - Versão Final",
   "short_name": "Scanner CPF",
-  "description": "Scanner avançado de CPF/CNPJ com foco automático e OCR otimizado",
+  "description": "Scanner de documentos CPF/CNPJ com OCR real",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",
-  "theme_color": "#1e40af",
+  "theme_color": "#22c55e",
   "orientation": "portrait",
   "icons": [
     {
@@ -18,8 +18,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "categories": ["productivity", "utilities"],
-  "lang": "pt-BR"
+  ]
 }
 
